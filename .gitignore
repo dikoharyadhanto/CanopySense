@@ -1,0 +1,49 @@
+# --- Git Exclusions ---
+# Ecosystem Exclusions
+01_Log/*.sum.md
+99_Archive/
+99_Docs/
+05_Reference/
+canopysense_env/
+share/
+
+
+# System Noise
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+
+# Environment
+.env
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.test.example
+.env.test.local
+.venv/
+node_modules/
+dist/
+build/
+__pycache__/
+
+# AI System Data
+.gemini/
+.claude/
+.claudeignore
+.envrc
+GEMINI.md
+CLAUDE.md
+DEEPSEEK.md
+AGENTS.md
+REASONIX.md
+.mcp.json
+.cursor/
+.codex/
+.reasonix/
+.vscode/
+
+# Test Output Data
+tests/result_output/
+
