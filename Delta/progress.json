@@ -3,7 +3,7 @@
   "schema_version": "1.0.0",
   "project_id": "001",
   "project_name": "CanopySense",
-  "last_updated": "2026-05-14T09:53:36Z",
+  "last_updated": "2026-05-14T10:15:13Z",
   "workflow_state": {
     "current_phase": "planning",
     "active_wo": "ANT-WO-004-v0.1.md",
@@ -204,12 +204,12 @@
     },
     "ANT-STR-004-v0.1.md": {
       "file": "Delta/02_Blueprint/ANT-STR-004-v0.1.md",
-      "status": "PENDING",
+      "status": "IN_PROGRESS",
       "version": "0.1",
-      "last_updated": "2026-05-14T09:07:44Z",
+      "last_updated": "2026-05-14T10:14:25Z",
       "approved_by": [],
       "integrity_state": "OK",
-      "effective_status": "PENDING"
+      "effective_status": "IN_PROGRESS"
     },
     "CDC-IMPL-004-v0.1.md": {
       "file": "Delta/03_Build/CDC-IMPL-004-v0.1.md",
@@ -218,14 +218,16 @@
       "last_updated": "2026-05-14T09:51:30Z",
       "approved_by": [],
       "integrity_state": "OK",
-      "effective_status": "PENDING"
+      "effective_status": "COMPLETE"
     },
     "CDC-WALK-004-v0.1.md": {
       "file": "Delta/03_Build/CDC-WALK-004-v0.1.md",
       "status": "COMPLETE",
       "version": "0.1",
       "last_updated": "2026-05-14T09:53:36Z",
-      "approved_by": []
+      "approved_by": [],
+      "integrity_state": "OK",
+      "effective_status": "COMPLETE"
     }
   },
   "audit_records": [
@@ -1456,6 +1458,66 @@
       "to_state": "COMPLETE",
       "gate_result": "passed",
       "timestamp": "2026-05-14T09:53:36Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514101247-D4Y7XA",
+      "operation_id": "session_bootstrap",
+      "domain": "session",
+      "action": "bootstrap",
+      "from_state": null,
+      "to_state": "active",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:12:47Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514101257-E2Y7BQ",
+      "operation_id": "refresh_run",
+      "domain": "refresh",
+      "action": "run",
+      "from_state": null,
+      "to_state": "clean",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:12:57Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514101303-KJMJGI",
+      "operation_id": "sync_registry",
+      "domain": "sync",
+      "action": "registry",
+      "from_state": null,
+      "to_state": null,
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:13:03Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514101425-8YNPVN",
+      "operation_id": "str_advance",
+      "domain": "str",
+      "action": "advance",
+      "from_state": "PENDING",
+      "to_state": "IN_PROGRESS",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:14:25Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514101513-Q9UWHF",
+      "operation_id": "refresh_run",
+      "domain": "refresh",
+      "action": "run",
+      "from_state": null,
+      "to_state": "clean",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:15:13Z",
       "override_id": null,
       "agent": "director"
     }

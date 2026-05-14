@@ -77,7 +77,7 @@ Implementation proceeded in IMPL order: Part B (Delta CLI) first, then governanc
 | :--- | :--- | :--- |
 | SI-1 | `python -m compileall src tests` | ✅ exit 0 |
 | SI-2 | `python tests/run_test.py` fails on `test_blocks.geojson not found`, not on `ModuleNotFoundError` | ✅ PASS |
-| SI-3 | `tests/generate_test_blocks.py` — no shapefile fixture available locally; deferred | ⏸️ Deferred |
+| SI-3 | `tests/generate_test_blocks.py` — missing-fixture guard added: exits 1 with actionable ERROR message, no traceback | ✅ PASS (retry fix) |
 | SI-4 | `docker compose -f tests/docker-compose.yml config` resolves `tests/Dockerfile.patcher` | ✅ PASS |
 | SI-5 | Docker daemon unavailable locally; environment limitation recorded | ⏸️ Environment limit |
 | SI-6 | `rg "03_Build\|04_Test" src tests` — zero execution-affecting runtime assignments remain | ✅ PASS |
@@ -107,7 +107,7 @@ Per IMPL §2 D4 and WO §4.2 item 4, the following disk artifacts exist but have
 
 ## 5. Technical Debt Carried Forward
 
-- `tests/generate_test_blocks.py` — no `.shp` fixture; actionable error path not verified (no regression from this change).
+- `tests/generate_test_blocks.py` — missing-fixture guard added (STR-004 retry fix). No `.shp` file committed; controlled exit verified.
 - Comment-only `03_Build`/`04_Test` references remain in docstrings (module usage examples). Not execution-affecting.
 - `tests/.env` does not exist; scripts silently skip dotenv loading (same behavior as before with `04_Test/.env`).
 - v0.4 artifact registration — see §4 escalation.
