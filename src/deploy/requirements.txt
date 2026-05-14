@@ -1,0 +1,16 @@
+# CanopySense Cloud Function — merged requirements (requirements.txt + requirements_cloud.txt)
+
+# Cloud Function framework
+functions-framework>=3.0.0
+
+# Secret Manager client
+google-cloud-secret-manager>=2.16.0
+
+# Core engine dependencies
+earthengine-api>=0.1.418
+geopandas>=0.14
+pandas>=2.0
+psycopg2-binary>=2.9
+requests>=2.31
+python-dotenv>=1.0
+schedule>=1.2

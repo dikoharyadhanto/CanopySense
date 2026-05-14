@@ -1,0 +1,9 @@
+{
+    "CONTRACTOR_TEST": {
+        "api_key_hash": "fc4670b077ac29a2d622a354ecb803d55092bb3964fee64b2270f343c4270888",
+        "status": "ACTIVE",
+        "issued_date": "2026-04-20",
+        "ip_whitelist": [],
+        "last_used": "2026-04-20T00:00:00Z"
+    }
+}

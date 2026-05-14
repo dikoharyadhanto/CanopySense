@@ -3,7 +3,7 @@
   "schema_version": "1.0.0",
   "project_id": "001",
   "project_name": "CanopySense",
-  "last_updated": "2026-05-14T10:15:13Z",
+  "last_updated": "2026-05-14T10:27:56Z",
   "workflow_state": {
     "current_phase": "planning",
     "active_wo": "ANT-WO-004-v0.1.md",
@@ -204,30 +204,32 @@
     },
     "ANT-STR-004-v0.1.md": {
       "file": "Delta/02_Blueprint/ANT-STR-004-v0.1.md",
-      "status": "IN_PROGRESS",
+      "status": "LOCKED",
       "version": "0.1",
-      "last_updated": "2026-05-14T10:14:25Z",
-      "approved_by": [],
+      "last_updated": "2026-05-14T10:27:40Z",
+      "approved_by": [
+        "Director"
+      ],
       "integrity_state": "OK",
-      "effective_status": "IN_PROGRESS"
+      "effective_status": "LOCKED"
     },
     "CDC-IMPL-004-v0.1.md": {
       "file": "Delta/03_Build/CDC-IMPL-004-v0.1.md",
-      "status": "COMPLETE",
+      "status": "LOCKED",
       "version": "0.1",
-      "last_updated": "2026-05-14T09:51:30Z",
+      "last_updated": "2026-05-14T10:27:40Z",
       "approved_by": [],
       "integrity_state": "OK",
-      "effective_status": "COMPLETE"
+      "effective_status": "LOCKED"
     },
     "CDC-WALK-004-v0.1.md": {
       "file": "Delta/03_Build/CDC-WALK-004-v0.1.md",
-      "status": "COMPLETE",
+      "status": "LOCKED",
       "version": "0.1",
-      "last_updated": "2026-05-14T09:53:36Z",
+      "last_updated": "2026-05-14T10:27:40Z",
       "approved_by": [],
       "integrity_state": "OK",
-      "effective_status": "COMPLETE"
+      "effective_status": "LOCKED"
     }
   },
   "audit_records": [
@@ -385,6 +387,18 @@
       "cso_reference": null,
       "note": "Approved migration repair WO scope.",
       "timestamp": "2026-05-14T09:06:19Z",
+      "satisfies_lock_gate": true
+    },
+    {
+      "audit_id": "AUD-20260514102727-ATBT2G",
+      "artifact_path": "Delta/02_Blueprint/ANT-STR-004-v0.1.md",
+      "artifact_type": "str",
+      "actor": "Director",
+      "verdict": "APPROVED",
+      "conditions_status": "NONE",
+      "cso_reference": null,
+      "note": "Approved ANT STR-004 verification and documented escalations.",
+      "timestamp": "2026-05-14T10:27:27Z",
       "satisfies_lock_gate": true
     }
   ],
@@ -1518,6 +1532,126 @@
       "to_state": "clean",
       "gate_result": "passed",
       "timestamp": "2026-05-14T10:15:13Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102522-LHD5TT",
+      "operation_id": "session_bootstrap",
+      "domain": "session",
+      "action": "bootstrap",
+      "from_state": null,
+      "to_state": "active",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:25:22Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102536-QITA30",
+      "operation_id": "refresh_run",
+      "domain": "refresh",
+      "action": "run",
+      "from_state": null,
+      "to_state": "clean",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:25:36Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102538-L08JB9",
+      "operation_id": "sync_registry",
+      "domain": "sync",
+      "action": "registry",
+      "from_state": null,
+      "to_state": null,
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:25:38Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102607-2IOKRO",
+      "operation_id": "str_complete",
+      "domain": "str",
+      "action": "complete",
+      "from_state": "IN_PROGRESS",
+      "to_state": "COMPLETE",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:26:07Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102740-BZTHJ2",
+      "operation_id": "str_lock",
+      "domain": "str",
+      "action": "lock",
+      "from_state": "COMPLETE",
+      "to_state": "LOCKED",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:27:40Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102740-KRDSOE",
+      "operation_id": "impl_autolock",
+      "domain": "impl",
+      "action": "auto-lock",
+      "from_state": "COMPLETE",
+      "to_state": "LOCKED",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:27:40Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102740-FZRFY8",
+      "operation_id": "walk_autolock",
+      "domain": "walk",
+      "action": "auto-lock",
+      "from_state": "COMPLETE",
+      "to_state": "LOCKED",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:27:40Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102747-FSFPGZ",
+      "operation_id": "session_bootstrap",
+      "domain": "session",
+      "action": "bootstrap",
+      "from_state": null,
+      "to_state": "active",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:27:47Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102756-BHJWNF",
+      "operation_id": "refresh_run",
+      "domain": "refresh",
+      "action": "run",
+      "from_state": null,
+      "to_state": "clean",
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:27:56Z",
+      "override_id": null,
+      "agent": "director"
+    },
+    {
+      "event_id": "EVT-20260514102756-XQT3I7",
+      "operation_id": "sync_registry",
+      "domain": "sync",
+      "action": "registry",
+      "from_state": null,
+      "to_state": null,
+      "gate_result": "passed",
+      "timestamp": "2026-05-14T10:27:56Z",
       "override_id": null,
       "agent": "director"
     }
