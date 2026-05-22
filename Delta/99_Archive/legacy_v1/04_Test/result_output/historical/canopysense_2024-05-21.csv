@@ -1,0 +1,2 @@
+block_id,acquisition_date,sensor,cloud_cover,ndvi,evi,ndre,savi,gndvi,features
+30,2024-05-21,sentinel-2,68.06,0.7134082827239367,0.5515103382180622,0.3707649566672304,0.47793754148897527,0.6376810549660124,"{""valid_pixel_ratio"": 0.319446, ""low_quality"": false}"

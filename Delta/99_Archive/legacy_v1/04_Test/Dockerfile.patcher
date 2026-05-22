@@ -1,0 +1,6 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY 04_Test/requirements_local.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+COPY 03_Build/ /app/
+CMD ["python3", "patcher_local.py"]
