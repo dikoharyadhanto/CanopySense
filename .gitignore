@@ -1,0 +1,32 @@
+archieve/
+Sigma/
+
+# Environment
+.env
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.test.example
+.env.test.local
+.venv/
+node_modules/
+dist/
+build/
+__pycache__/
+
+# AI System Data
+.gemini/
+.claude/
+.claudeignore
+.claudesignore
+.envrc
+GEMINI.md
+CLAUDE.md
+DEEPSEEK.md
+AGENTS.md
+REASONIX.md
+.mcp.json
+.cursor/
+.codex/
+.reasonix/
+.vscode/
