@@ -1,6 +1,11 @@
 archieve/
 Sigma/
 
+# Credentials — never commit
+**/gee_key.json
+**/*service_account*.json
+**/*credentials*.json
+
 # Environment
 .env
 **/.env

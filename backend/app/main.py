@@ -31,4 +31,4 @@ app.include_router(blocks_router, prefix="/api", tags=["api"])
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "ok"}

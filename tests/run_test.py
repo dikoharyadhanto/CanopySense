@@ -60,8 +60,8 @@ GCS_BUCKET       = "canopy-sense-data"
 RESULTS_FILE     = pathlib.Path(__file__).parent / "test_results.json"
 
 # 7-day window — adjust to a period with known satellite coverage over your estate
-DATE_START = "2025-01-01"
-DATE_END   = "2025-01-08"
+DATE_START = "2024-08-01"
+DATE_END   = "2024-08-31"
 
 # ---------------------------------------------------------------------------
 # Logging setup

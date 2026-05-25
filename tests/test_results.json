@@ -1,0 +1,78 @@
+{
+  "run_date": "2026-05-22T11:29:10.985096",
+  "date_start": "2024-08-01",
+  "date_end": "2024-08-31",
+  "verdict": "FAIL",
+  "tc_results": [
+    {
+      "tc_id": "TC-01",
+      "name": "Deterministic Sensor Selection",
+      "status": "PASS",
+      "notes": [
+        "S2 Tier 1 selected, ratio=0.999"
+      ],
+      "error": ""
+    },
+    {
+      "tc_id": "TC-02",
+      "name": "Cloud Masking",
+      "status": "PASS",
+      "notes": [
+        "Cloud mask applied for sensor=S2."
+      ],
+      "error": ""
+    },
+    {
+      "tc_id": "TC-03",
+      "name": "Spectral Harmonization",
+      "status": "PASS",
+      "notes": [
+        "S2: bands scaled \u00f710000 \u2192 [0,1], standard names confirmed. No Roy applied (S2 is reference)."
+      ],
+      "error": ""
+    },
+    {
+      "tc_id": "TC-04",
+      "name": "Index Calculation",
+      "status": "PASS",
+      "notes": [
+        "S2: NDVI, EVI, SAVI, GNDVI, NDRE all present."
+      ],
+      "error": ""
+    },
+    {
+      "tc_id": "TC-05",
+      "name": "Hard Quality Gate",
+      "status": "PASS",
+      "notes": [
+        "45 blocks in input. FR-03 gate (valid_pixel_ratio >= 0.2) applied server-side in reduceRegions via ee.Filter.gte('valid_mask', 0.2). Estates below threshold will be absent from exported CSV."
+      ],
+      "error": ""
+    },
+    {
+      "tc_id": "TC-06",
+      "name": "Async Retry Logic",
+      "status": "PASS",
+      "notes": [
+        "Retry logic verified: MAX_RETRIES=3, backoff=30s/60s/120s, targets: ['quotaExceeded', 'computeTimeout', 'Too Many Requests']"
+      ],
+      "error": ""
+    },
+    {
+      "tc_id": "TC-07",
+      "name": "Export Validation & Task Polling",
+      "status": "FAIL",
+      "notes": [],
+      "error": "1 chunk(s) FAILED: GEE task 'canopy_sense_2024-08-01_chunk0000' FAILED: Unable to write to bucket canopy-sense-data. canopysense@swm-ui.iam.gserviceaccount.com does not have storage.objects.create access to the Google Cloud Storage object. Permission 'storage.objects.create' denied on resource (or it may not exist)."
+    },
+    {
+      "tc_id": "TC-08",
+      "name": "DB Schema Alignment [FR-08]",
+      "status": "PASS",
+      "notes": [
+        "All FR-08 checks passed: block_id (int), acquisition_date, sensor normalized (e.g. S2\u2192sentinel-2), cloud_cover, features JSONB, column order matches satellite_data DDL."
+      ],
+      "error": ""
+    }
+  ]
+}

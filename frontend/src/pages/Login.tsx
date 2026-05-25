@@ -5,7 +5,7 @@ import api from '../lib/api';
 export default function Login() {
   const [username, setUsername] = useState('manager');
   const [password, setPassword] = useState('password');
-  const [error] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -21,14 +21,7 @@ export default function Login() {
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (err) {
-      if (import.meta.env.DEV) {
-        // Mock success if backend offline (Development Only)
-        console.warn("Backend offline or error, logging in via mock token");
-        localStorage.setItem('token', 'mock_token');
-        navigate('/dashboard');
-      } else {
-        setError('Login failed. Please check your credentials.');
-      }
+      setError('Login failed. Please check your credentials.');
     }
   };
 
