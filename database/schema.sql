@@ -1,6 +1,12 @@
 -- Enable PostGIS extension
 CREATE EXTENSION IF NOT EXISTS postgis;
 
+-- Ensure public tables land in public regardless of role-level search_path
+SET search_path TO public;
+
+-- Namespace for patcher-facing operational tables (patcher_local.py contract)
+CREATE SCHEMA IF NOT EXISTS canopysense;
+
 -- 1. companies
 CREATE TABLE companies (
   id BIGSERIAL PRIMARY KEY,
@@ -70,10 +76,10 @@ CREATE TABLE user_company_roles (
   UNIQUE(user_id, company_id)
 );
 
--- 7. estates
-CREATE TABLE estates (
+-- 7. canopysense.estates (patcher contract: canopysense schema)
+CREATE TABLE canopysense.estates (
  id BIGSERIAL PRIMARY KEY,
- company_id BIGINT REFERENCES companies(id),
+ company_id BIGINT REFERENCES public.companies(id),
  name VARCHAR(100) NOT NULL,
  code VARCHAR(20) UNIQUE NOT NULL,
  geometry GEOMETRY(MultiPolygonZ,4326) NOT NULL,
@@ -83,30 +89,30 @@ CREATE TABLE estates (
  created_at TIMESTAMP DEFAULT NOW(),
  updated_at TIMESTAMP
 );
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_estates_geom ON estates USING GIST(geometry);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_estates_envelope ON estates USING GIST(envelope);
-CREATE INDEX idx_estates_code ON estates(code);
-CREATE INDEX idx_estates_company_id ON estates(company_id);
-ALTER TABLE estates ADD CONSTRAINT chk_estate_valid CHECK (ST_IsValid(geometry) AND ST_SRID(geometry)=4326);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_estates_geom ON canopysense.estates USING GIST(geometry);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_estates_envelope ON canopysense.estates USING GIST(envelope);
+CREATE INDEX idx_estates_code ON canopysense.estates(code);
+CREATE INDEX idx_estates_company_id ON canopysense.estates(company_id);
+ALTER TABLE canopysense.estates ADD CONSTRAINT chk_estate_valid CHECK (ST_IsValid(geometry) AND ST_SRID(geometry)=4326);
 
--- 8. afdelings
-CREATE TABLE afdelings (
+-- 8. canopysense.afdelings (patcher contract: canopysense schema)
+CREATE TABLE canopysense.afdelings (
     id BIGSERIAL PRIMARY KEY,
-    estate_id BIGINT REFERENCES estates(id),
-    company_id BIGINT REFERENCES companies(id),
+    estate_id BIGINT REFERENCES canopysense.estates(id),
+    company_id BIGINT REFERENCES public.companies(id),
     name VARCHAR(100),
     code VARCHAR(20),
     geometry GEOMETRY(MultiPolygon, 4326) NOT NULL
 );
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_afdelings_geom ON afdelings USING GIST(geometry);
-CREATE INDEX idx_afdelings_estate ON afdelings(estate_id);
-ALTER TABLE afdelings ADD CONSTRAINT chk_afdeling_type CHECK (GeometryType(geometry) = 'MULTIPOLYGON');
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_afdelings_geom ON canopysense.afdelings USING GIST(geometry);
+CREATE INDEX idx_afdelings_estate ON canopysense.afdelings(estate_id);
+ALTER TABLE canopysense.afdelings ADD CONSTRAINT chk_afdeling_type CHECK (GeometryType(geometry) = 'MULTIPOLYGON');
 
--- 9. blocks
-CREATE TABLE blocks (
+-- 9. canopysense.blocks (patcher contract: hardcoded in patcher_local.py line 51)
+CREATE TABLE canopysense.blocks (
     id BIGSERIAL PRIMARY KEY,
-    afdeling_id BIGINT REFERENCES afdelings(id),
-    company_id BIGINT REFERENCES companies(id),
+    afdeling_id BIGINT REFERENCES canopysense.afdelings(id),
+    company_id BIGINT REFERENCES public.companies(id),
     name VARCHAR(100),
     code VARCHAR(20) UNIQUE,
     geometry GEOMETRY(Polygon, 4326) NOT NULL,
@@ -114,14 +120,14 @@ CREATE TABLE blocks (
     clone_type VARCHAR(50),
     area_ha NUMERIC(10, 2) GENERATED ALWAYS AS (ST_Area(geometry::geography)/10000) STORED
 );
-ALTER TABLE blocks ADD CONSTRAINT chk_blocks_type CHECK (GeometryType(geometry) = 'POLYGON');
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_blocks_geom ON blocks USING GIST(geometry);
-CREATE INDEX idx_blocks_company_id ON blocks(company_id);
+ALTER TABLE canopysense.blocks ADD CONSTRAINT chk_blocks_type CHECK (GeometryType(geometry) = 'POLYGON');
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_blocks_geom ON canopysense.blocks USING GIST(geometry);
+CREATE INDEX idx_blocks_company_id ON canopysense.blocks(company_id);
 
--- 10. satellite_data
-CREATE TABLE satellite_data (
+-- 10. canopysense.satellite_data (patcher contract: written by Cloud Function via _execute_writes)
+CREATE TABLE canopysense.satellite_data (
     id BIGSERIAL PRIMARY KEY,
-    block_id BIGINT REFERENCES blocks(id),
+    block_id BIGINT REFERENCES canopysense.blocks(id),
     acquisition_date DATE,
     sensor VARCHAR(20) DEFAULT 'sentinel-2',
     cloud_cover NUMERIC(5, 2),
@@ -134,10 +140,10 @@ CREATE TABLE satellite_data (
     created_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(block_id, acquisition_date, sensor)
 );
-CREATE INDEX idx_satellite_date_block ON satellite_data (block_id, acquisition_date DESC);
+CREATE INDEX idx_satellite_date_block ON canopysense.satellite_data (block_id, acquisition_date DESC);
 
 -- Trigger to make satellite_data append-only
-CREATE OR REPLACE FUNCTION prevent_satellite_data_update()
+CREATE OR REPLACE FUNCTION canopysense.prevent_satellite_data_update()
 RETURNS TRIGGER AS $$
 BEGIN
     RAISE EXCEPTION 'satellite_data is an append-only table. Updates or deletes are not allowed.';
@@ -145,14 +151,32 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER immutable_satellite_data
-BEFORE UPDATE OR DELETE ON satellite_data
-FOR EACH ROW EXECUTE FUNCTION prevent_satellite_data_update();
+BEFORE UPDATE OR DELETE ON canopysense.satellite_data
+FOR EACH ROW EXECUTE FUNCTION canopysense.prevent_satellite_data_update();
 
--- 11. ground_truth
+-- 16. canopysense.patcher_run_log (patcher contract: written by patcher_local.py)
+CREATE TABLE canopysense.patcher_run_log (
+    id BIGSERIAL PRIMARY KEY,
+    run_id VARCHAR(36) NOT NULL,
+    trigger_mode VARCHAR(20) NOT NULL,
+    afdeling_id INTEGER,
+    block_id INTEGER,
+    batch_fingerprint VARCHAR(64),
+    status VARCHAR(20) NOT NULL,
+    rows_inserted INTEGER DEFAULT 0,
+    error_detail TEXT,
+    api_version VARCHAR(10),
+    started_at TIMESTAMP,
+    triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_patcher_run_log_afdeling ON canopysense.patcher_run_log (afdeling_id, triggered_at DESC);
+CREATE INDEX idx_patcher_run_log_status ON canopysense.patcher_run_log (status, trigger_mode);
+
+-- 11. ground_truth (public schema — Phase 2+ ML tables)
 CREATE TABLE ground_truth (
     id BIGSERIAL PRIMARY KEY,
-    block_id BIGINT REFERENCES blocks(id),
-    satellite_data_id BIGINT REFERENCES satellite_data(id),
+    block_id BIGINT REFERENCES canopysense.blocks(id),
+    satellite_data_id BIGINT REFERENCES canopysense.satellite_data(id),
     measurement_date DATE,
     gcc_percent NUMERIC(5, 2),
     method VARCHAR(50),
@@ -164,7 +188,7 @@ CREATE TABLE ground_truth (
 -- 12. predictions
 CREATE TABLE predictions (
     id BIGSERIAL PRIMARY KEY,
-    satellite_data_id BIGINT REFERENCES satellite_data(id),
+    satellite_data_id BIGINT REFERENCES canopysense.satellite_data(id),
     prediction_date DATE,
     gcc_predicted FLOAT,
     gcc_confidence FLOAT,
@@ -178,7 +202,7 @@ CREATE INDEX idx_predictions_date_block ON predictions (satellite_data_id, predi
 CREATE TABLE anomalies (
     id BIGSERIAL PRIMARY KEY,
     prediction_id BIGINT REFERENCES predictions(id) UNIQUE,
-    block_id BIGINT REFERENCES blocks(id),
+    block_id BIGINT REFERENCES canopysense.blocks(id),
     actual_gcc FLOAT,
     deviation FLOAT,
     status VARCHAR(20) DEFAULT 'OPEN',
@@ -213,3 +237,6 @@ CREATE TABLE field_inspections (
     inspected_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Set default search_path: canopysense first so unqualified backend queries resolve correctly
+ALTER ROLE postgres SET search_path = canopysense, public;
