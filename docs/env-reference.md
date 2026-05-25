@@ -31,9 +31,11 @@ In Vite, prefix all environment variables with `VITE_` to expose them to the cli
 | `DB_CONNECTION_STRING` | GCP Secret Manager or `.env` | PostgreSQL connection string for patcher-cloud Cloud Function |
 | GCS bucket `canopy-sense-data` | GCP Storage | Export destination for GEE pipeline output. Service account must have `storage.objects.create` permission. |
 
-### IAM Remediation — TC-07 Blocker
+### Direct GEE Test Harness IAM Remediation
 
-TC-07 fails because the service account `canopysense@swm-ui.iam.gserviceaccount.com` lacks `storage.objects.create` on bucket `canopy-sense-data`.
+`tests/run_test.py` exercises a direct GEE -> GCS export path using the local service account. That harness fails if `canopysense@swm-ui.iam.gserviceaccount.com` lacks `storage.objects.create` on bucket `canopy-sense-data`.
+
+This is separate from the accepted operational path, where `patcher_local.py` calls patcher-cloud with `PATCHER_API_KEY` and patcher-cloud handles GEE/GCS internally.
 
 Fix:
 ```bash
@@ -44,7 +46,7 @@ gcloud storage buckets add-iam-policy-binding gs://canopy-sense-data \
 
 Or via GCP Console: Storage → Buckets → `canopy-sense-data` → Permissions → Grant `Storage Object Creator` to the service account.
 
-After fix, re-run `tests/run_test.py` to confirm TC-07 passes.
+After this optional harness fix, re-run `tests/run_test.py` to confirm the direct GEE test path passes. For the operational TC-07 run, provide a valid `PATCHER_API_KEY` and run `patcher_local.py`.
 
 ## `.env.example`
 

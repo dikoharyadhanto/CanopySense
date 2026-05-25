@@ -4,7 +4,7 @@
 
 - Docker (with PostGIS image available: `postgis/postgis:latest`)
 - Python 3.11+ with pip
-- Node.js 18+
+- Node.js 20+
 - Git
 
 ---
@@ -51,7 +51,7 @@ docker exec canopy-db psql -U postgres -d canopysense -f /tmp/seed.sql
 Verify:
 ```bash
 docker exec canopy-db psql -U postgres -d canopysense \
-  -c "SELECT COUNT(*) FROM blocks; SELECT COUNT(*) FROM satellite_data;"
+  -c "SELECT COUNT(*) FROM canopysense.blocks; SELECT COUNT(*) FROM canopysense.satellite_data;"
 # Expected: 44 blocks, ~2324 satellite rows
 ```
 
@@ -85,7 +85,7 @@ curl http://localhost:8000/health
 cd frontend
 npm install
 VITE_API_URL=http://localhost:8000 npm run dev
-# Dev server: http://localhost:5173
+# Dev server: http://localhost:3000
 ```
 
 For production build:
@@ -98,7 +98,7 @@ npm run build
 
 ## 5. Login
 
-Open `http://localhost:5173` in browser.
+Open `http://localhost:3000` in browser.
 
 - **Username:** `manager`
 - **Password:** `password` (any password accepted in Phase 1 — seed uses `dummy_hash`)
@@ -107,14 +107,14 @@ Open `http://localhost:5173` in browser.
 
 ## 6. Docker Compose (Full Stack)
 
-See `docker-compose.yml` at project root for a single-command startup once Dockerfiles are in place:
+See `docker-compose.yml` at project root for a single-command startup:
 
 ```bash
 docker compose up --build
 # Services: db (5432), api (8000), frontend (3000)
 ```
 
-> **Status:** Dockerfiles pending — full `docker compose up` is the final deployment step.
+> **Status:** Validated locally. The frontend image uses `node:20-slim` to avoid Alpine/musl native binding issues with Vite/Rolldown.
 
 ---
 
@@ -122,4 +122,4 @@ docker compose up --build
 
 - IDCloudHost server deployment is post-Phase 1. The guide above covers local development.
 - Patcher-cloud (GCP Cloud Function) network validation to IDCloudHost port 5432 is deferred (RR-004).
-- TC-07 GEE IAM: service account needs `storage.objects.create` on bucket `canopy-sense-data` for live pipeline runs. See `docs/env-reference.md`.
+- TC-07 operational run uses `patcher_local.py` -> patcher-cloud and requires a valid `PATCHER_API_KEY`. The separate `tests/run_test.py` direct GEE->GCS harness may still require `storage.objects.create` on bucket `canopy-sense-data`; see `docs/env-reference.md`.

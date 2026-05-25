@@ -20,9 +20,8 @@
 | Local deployment guide | Done | `docs/deployment-guide.md` |
 
 **Not yet complete (blocked or deferred):**
-- TC-07: GEE pipeline export — blocked on IAM (`storage.objects.create` on `canopy-sense-data`). See `docs/env-reference.md`.
-- Dockerfiles: `backend/Dockerfile`, `frontend/Dockerfile` — deferred, local-first approach.
-- `docker compose up` full-stack test (TC-030) — deferred until Dockerfiles done.
+- TC-07 real operational run — patcher-cloud is reachable, and the local DB schema pre-condition is met. A valid `PATCHER_API_KEY` is still required for `patcher_local.py`.
+- Direct GEE test harness IAM — optional if `tests/run_test.py` must pass independently; see `docs/env-reference.md`.
 - IDCloudHost server deployment — post-Phase 1.
 
 ---
@@ -31,8 +30,8 @@
 
 ### P1 — Complete Phase 1 Deferred Items
 
-1. **TC-07 IAM fix**: Grant `storage.objects.create` to `canopysense@swm-ui.iam.gserviceaccount.com` on `canopy-sense-data`. Run GEE pipeline to validate end-to-end data ingestion.
-2. **Dockerfiles**: Write `backend/Dockerfile` and `frontend/Dockerfile`. Validate `docker compose up --build` locally before server deployment.
+1. **TC-07 operational key**: Provide a valid `PATCHER_API_KEY` and run `patcher_local.py` against `canopysense.blocks`.
+2. **Direct GEE harness IAM (optional)**: Grant `storage.objects.create` to `canopysense@swm-ui.iam.gserviceaccount.com` on `canopy-sense-data` only if `tests/run_test.py` remains an authoritative direct-export test.
 3. **IDCloudHost deployment**: Migrate local Docker stack to IDCloudHost NVME 5. Point `VITE_API_URL` at server IP/domain.
 
 ### P2 — ML Pipeline (GCC Prediction)
