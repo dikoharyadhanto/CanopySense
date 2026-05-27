@@ -97,6 +97,8 @@ _SCALE_LS = 30
 def run_pipeline(
     blocks_gdf: gpd.GeoDataFrame | None = None,
     seed_shapefile: str | None = None,
+    date_start: str | None = None,
+    date_end: str | None = None,
 ) -> None:
     """
     Execute the full CanopySense data extraction and ingestion pipeline.
@@ -107,6 +109,10 @@ def run_pipeline(
                         When None (direct local run), blocks are read from the DB as before.
         seed_shapefile: Path to a block shapefile for one-time DB seeding.
                         If None, blocks are read from blocks_gdf or DB.
+        date_start:     ISO date string (YYYY-MM-DD) for start of scene search window.
+                        When None, defaults to today − 7 days (standard weekly behavior).
+        date_end:       ISO date string (YYYY-MM-DD) for end of scene search window.
+                        When None, defaults to today (standard weekly behavior).
     """
     # Only open a DB connection when needed: seeding from shapefile OR loading blocks from DB.
     # Cloud Function path (blocks_gdf provided, no seed) skips DB entirely — FLAG-2 fix.
@@ -139,9 +145,12 @@ def run_pipeline(
         logger.info("=== Step 2: Initializing GEE ===")
         initialize_ee()
 
-        date_end   = date.today().isoformat()
-        date_start = (date.today() - timedelta(days=7)).isoformat()
-        logger.info("Scene search window: %s → %s", date_start, date_end)
+        if date_start and date_end:
+            logger.info("Scene search window (supplied): %s → %s", date_start, date_end)
+        else:
+            date_end   = date.today().isoformat()
+            date_start = (date.today() - timedelta(days=7)).isoformat()
+            logger.info("Scene search window (default weekly): %s → %s", date_start, date_end)
 
         # Step 3 — scene selection
         logger.info("=== Step 3: Scene selection ===")

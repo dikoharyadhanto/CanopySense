@@ -1,6 +1,15 @@
 """
 historical_backfill.py — CanopySense Historical Data Seeder [WO-002-v0.5].
 
+DEPRECATED — Use patcher_local.py --backfill instead.
+  patcher_local.py --backfill                          # all estates, 3-year default
+  patcher_local.py --backfill --estate-id 1            # estate scope
+  patcher_local.py --backfill --date-start 2024-01 --date-end 2024-03  # custom range
+
+This standalone script is retained as a documented fallback and reference.
+It bypasses the Cloud Function route and runs GEE directly — do not use
+for routine operational backfill once the integrated route is verified.
+
 Loops week-by-week from April 2023 to April 2026 (~156 chunks of 7 days each),
 extracts the best available satellite scene per week, and inserts the
 resulting vegetation index statistics into canopysense.satellite_data.
@@ -268,15 +277,17 @@ CREATE TABLE IF NOT EXISTS canopysense.backfill_skipped (
     id           SERIAL PRIMARY KEY,
     window_start DATE        NOT NULL,
     window_end   DATE        NOT NULL,
+    batch_fp     TEXT        NOT NULL DEFAULT '',
     skip_reason  TEXT        NOT NULL,
     skipped_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (window_start, window_end)
+    UNIQUE (window_start, window_end, batch_fp)
 );
 COMMENT ON TABLE canopysense.backfill_skipped IS
     'Permanent record of 7-day windows where no usable satellite scene was '
     'found (no_scene) or every block failed the FR-03 quality gate '
     '(fr03_all_failed). historical_backfill.py checks this table before '
-    'making GEE API calls so reruns do not waste quota on known-bad windows.';
+    'making GEE API calls so reruns do not waste quota on known-bad windows. '
+    'batch_fp=empty-string is used by historical_backfill.py (legacy fallback).';
 """
 
 
@@ -354,9 +365,9 @@ def _write_to_backlog(
         cur.execute(
             """
             INSERT INTO canopysense.backfill_skipped
-                (window_start, window_end, skip_reason)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (window_start, window_end) DO NOTHING
+                (window_start, window_end, batch_fp, skip_reason)
+            VALUES (%s, %s, '', %s)
+            ON CONFLICT (window_start, window_end, batch_fp) DO NOTHING
             """,
             (date_start, date_end, reason),
         )

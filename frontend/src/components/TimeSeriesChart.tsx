@@ -18,6 +18,8 @@ interface Props {
   data: IndexRow[];
   showEvi: boolean;
   showNdre: boolean;
+  showSavi: boolean;
+  showGndvi: boolean;
 }
 
 const CLOUD_THRESHOLD = 30;
@@ -26,7 +28,7 @@ function formatDate(d: string) {
   return d.slice(0, 10);
 }
 
-export default function TimeSeriesChart({ data, showEvi, showNdre }: Props) {
+export default function TimeSeriesChart({ data, showEvi, showNdre, showSavi, showGndvi }: Props) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400 text-sm">
@@ -97,6 +99,28 @@ export default function TimeSeriesChart({ data, showEvi, showNdre }: Props) {
             dot={false}
             connectNulls={false}
             name="NDRE"
+          />
+        )}
+        {showSavi && (
+          <Line
+            type="monotone"
+            dataKey="savi"
+            stroke="#9333ea"
+            strokeWidth={1.5}
+            dot={false}
+            connectNulls={false}
+            name="SAVI"
+          />
+        )}
+        {showGndvi && (
+          <Line
+            type="monotone"
+            dataKey="gndvi"
+            stroke="#0d9488"
+            strokeWidth={1.5}
+            dot={false}
+            connectNulls={false}
+            name="GNDVI"
           />
         )}
       </LineChart>

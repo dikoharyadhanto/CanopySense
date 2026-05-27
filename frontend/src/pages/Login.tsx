@@ -3,55 +3,127 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
 export default function Login() {
-  const [username, setUsername] = useState('manager');
-  const [password, setPassword] = useState('password');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     try {
       const formData = new URLSearchParams();
       formData.append('username', username);
       formData.append('password', password);
-      
       const response = await api.post('/auth/login', formData, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Login failed. Please check your credentials.');
+    } catch {
+      setError('Username atau password salah. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-50">
-      <form onSubmit={handleLogin} className="p-8 bg-white rounded shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center text-green-700">CanopySense</h1>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-          <input 
-            type="text" 
-            className="w-full border p-2 rounded"
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-          />
+    <div className="flex h-screen">
+      {/* Left — brand panel */}
+      <div className="hidden lg:flex w-[480px] flex-shrink-0 flex-col justify-between bg-[#1B3A2D] px-12 py-10">
+        <div>
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-9 h-9 rounded-lg bg-[#19C853] flex items-center justify-center text-white text-lg font-bold select-none">
+              C
+            </div>
+            <div>
+              <div className="text-white font-bold text-base leading-tight">CanopySense</div>
+              <div className="text-green-300 text-xs">Monitoring Perkebunan Karet</div>
+            </div>
+          </div>
+          <h2 className="text-white text-2xl font-bold leading-snug mb-4">
+            Data satelit real-time<br />untuk perkebunan<br />yang lebih cerdas.
+          </h2>
+          <p className="text-green-300/80 text-sm leading-relaxed">
+            Pantau kesehatan kanopi, tren indeks vegetasi, dan status blok estate
+            Anda langsung dari citra satelit terkini.
+          </p>
         </div>
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input 
-            type="password" 
-            className="w-full border p-2 rounded"
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-          />
+        <div className="text-green-400/50 text-xs">
+          CanopySense v1.5 · Phase 1 Manager Portal
         </div>
-        <button type="submit" className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">
-          Sign In
-        </button>
-      </form>
+      </div>
+
+      {/* Right — form panel */}
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#F4FAF6] px-6">
+        {/* Mobile brand header */}
+        <div className="flex lg:hidden items-center gap-2 mb-8">
+          <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center text-white font-bold text-sm">
+            C
+          </div>
+          <span className="font-bold text-gray-800">CanopySense</span>
+        </div>
+
+        <div className="w-full max-w-sm">
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">Masuk</h1>
+          <p className="text-sm text-gray-500 mb-8">
+            Masuk ke Manager Portal untuk melanjutkan.
+          </p>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Username
+              </label>
+              <input
+                type="text"
+                autoComplete="username"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
+                           bg-white text-gray-900 placeholder-gray-400"
+                placeholder="Masukkan username"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
+                           bg-white text-gray-900 placeholder-gray-400"
+                placeholder="Masukkan password"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#19C853] hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed
+                         text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+            >
+              {loading ? 'Memproses...' : 'Masuk'}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

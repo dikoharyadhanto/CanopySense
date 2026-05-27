@@ -92,6 +92,12 @@ def _fetch_gee_credentials() -> tuple[str, str, str]:
     return key_json_str, key_data.get("client_email", ""), key_data.get("project_id", "")
 
 
+def _parse_request_meta(request) -> tuple[str | None, str | None, str | None]:
+    """Extract optional mode, date_start, date_end from request body. Absent fields return None."""
+    body = request.get_json(silent=True) or {}
+    return body.get("mode"), body.get("date_start"), body.get("date_end")
+
+
 def _parse_blocks(request) -> tuple[gpd.GeoDataFrame | None, Any]:
     """Parse GeoJSON FeatureCollection from request body. Returns (gdf, ids) or (None, error_str)."""
     body = request.get_json(silent=True)
@@ -111,7 +117,12 @@ def _parse_blocks(request) -> tuple[gpd.GeoDataFrame | None, Any]:
         return None, "400 Bad Request: Missing or invalid blocks payload"
 
 
-def _run_engine(output_dir: pathlib.Path, blocks_gdf: gpd.GeoDataFrame) -> None:
+def _run_engine(
+    output_dir: pathlib.Path,
+    blocks_gdf: gpd.GeoDataFrame,
+    date_start: str | None = None,
+    date_end: str | None = None,
+) -> None:
     """Run engine_launcher with blocks from request body; monkey-patch output dir for /tmp write."""
     sys.path.insert(0, str(pathlib.Path(__file__).parent))
     import engine_launcher  # noqa: PLC0415
@@ -119,7 +130,7 @@ def _run_engine(output_dir: pathlib.Path, blocks_gdf: gpd.GeoDataFrame) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     engine_launcher._OUTPUT_DIR = output_dir
     _map_previewer._DEFAULT_OUTPUT = output_dir / "canopysense_visuals.html"
-    engine_launcher.run_pipeline(blocks_gdf=blocks_gdf)
+    engine_launcher.run_pipeline(blocks_gdf=blocks_gdf, date_start=date_start, date_end=date_end)
 
 
 def _read_records(output_dir: pathlib.Path) -> list[dict]:
@@ -192,7 +203,8 @@ def patcher_cloud(request):  # type: ignore[no-untyped-def]
             _audit(contractor_id, "REJECTED", f"IP blocked: {source_ip}")
             return _resp({"error": "403 Forbidden: Source IP not authorized"}, 403)
 
-    # ── 6. Parse and validate blocks from request body (Option B) ─────────────
+    # ── 6. Parse and validate blocks + optional request metadata ─────────────
+    req_mode, req_date_start, req_date_end = _parse_request_meta(request)
     blocks_gdf, payload = _parse_blocks(request)
     if blocks_gdf is None:
         _audit(contractor_id, "REJECTED", payload)
@@ -211,7 +223,7 @@ def patcher_cloud(request):  # type: ignore[no-untyped-def]
         os.environ["EE_PROJECT_ID"] = ee_project_id
 
     # ── 8. Invoke core engine ────────────────────────────────────────────────
-    _audit(contractor_id, "AUTH_OK", f"Triggering core engine — {len(input_block_ids)} blocks")
+    _audit(contractor_id, "AUTH_OK", f"Triggering core engine — {len(input_block_ids)} blocks | mode={req_mode or 'scheduled'} | window={req_date_start or 'default'}→{req_date_end or 'default'}")
     timeout = int(os.environ.get("FUNCTION_TIMEOUT_SECONDS", 120))
     output_dir = pathlib.Path(tempfile.mkdtemp(prefix="cs_output_"))
 
@@ -219,7 +231,7 @@ def patcher_cloud(request):  # type: ignore[no-untyped-def]
     from concurrent.futures import TimeoutError as FuturesTimeout
 
     with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(_run_engine, output_dir, blocks_gdf)
+        future = executor.submit(_run_engine, output_dir, blocks_gdf, req_date_start, req_date_end)
         try:
             future.result(timeout=timeout)
         except FuturesTimeout:

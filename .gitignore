@@ -19,6 +19,9 @@ dist/
 build/
 __pycache__/
 
+# Cloud source inspection (local diff only — never commit)
+artifacts/cloud_source_inspection/
+
 # AI System Data
 .gemini/
 .claude/

@@ -1,6 +1,6 @@
 INSERT INTO companies (id, company_id, company_name) VALUES (1, '2a9f6659-f331-49cf-bcab-188b18bfa2ed', 'PT CanopySense Demo');
 
-INSERT INTO users (id, company_id, email, full_name, username, password_hash, is_active) VALUES (1, 1, 'manager@canopysense.demo', 'Demo Manager', 'manager', 'dummy_hash', true);
+INSERT INTO users (id, company_id, email, full_name, username, password_hash, is_active) VALUES (1, 1, 'manager@canopysense.demo', 'Demo Manager', 'manager', '$2b$12$UpMn.Cbgb2XdbiEZQKfwC.aUtxbsjy5fXnXFkds/CijxDLtsXBoom', true);
 
 INSERT INTO user_company_roles (user_id, company_id, role) VALUES (1, 1, 'manager');
 

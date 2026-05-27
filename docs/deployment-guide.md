@@ -101,7 +101,7 @@ npm run build
 Open `http://localhost:3000` in browser.
 
 - **Username:** `manager`
-- **Password:** `password` (any password accepted in Phase 1 — seed uses `dummy_hash`)
+- **Password:** `password` (bcrypt hash stored in seed; invalid passwords are rejected by the API)
 
 ---
 

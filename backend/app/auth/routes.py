@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.auth.jwt import verify_password, create_access_token
+from app.api.deps import get_current_user
 from app.database import get_db_pool, settings
 from datetime import timedelta
 import asyncpg
@@ -12,6 +13,11 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     expires_in: int
+
+class UserContext(BaseModel):
+    username: str
+    role: str | None
+    company_id: int | None
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), pool: asyncpg.Pool = Depends(get_db_pool)):
@@ -44,3 +50,14 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
 
     return {"access_token": access_token, "token_type": "bearer", "expires_in": expires_seconds}
+
+
+@router.get("/me", response_model=UserContext)
+async def get_me(
+    current_user: dict = Depends(get_current_user),
+):
+    return {
+        "username": current_user["username"],
+        "role": current_user["role"],
+        "company_id": current_user["company_id"],
+    }

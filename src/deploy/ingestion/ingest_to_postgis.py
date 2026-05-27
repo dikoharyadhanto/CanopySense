@@ -273,12 +273,7 @@ def _insert_rows(
     Uses execute_values for efficiency.
     Returns (rows_inserted, error_list).
     """
-    col_list  = ", ".join(_COLUMNS)
-    placeholders = ", ".join(["%s"] * len(_COLUMNS))
-    sql = (
-        f"INSERT INTO {_TABLE} ({col_list}) VALUES ({placeholders})"
-        f" ON CONFLICT (block_id, acquisition_date) DO NOTHING"
-    )
+    col_list = ", ".join(_COLUMNS)
 
     inserted = 0
     errors: list[str] = []

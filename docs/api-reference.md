@@ -68,6 +68,28 @@ Authenticate and receive a JWT access token.
 
 ---
 
+### `GET /auth/me`
+
+Return the authenticated user's context. Requires a valid Bearer token.
+
+**Response 200**
+```json
+{
+  "username": "manager",
+  "role": "Manager",
+  "company_id": 1
+}
+```
+
+**Notes**
+- This endpoint is the authoritative server-side source for user context.
+- The frontend decodes the same fields from the JWT for display-only purposes (sidebar username/role).
+  Authorization is always enforced by this and other protected endpoints, not by the frontend JWT decode.
+
+**Response 401** — missing or invalid token
+
+---
+
 ## Blocks — `/api`
 
 All `/api` endpoints require a valid Bearer token. Responses are filtered to the authenticated user's `company_id`.
