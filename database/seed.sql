@@ -2391,3 +2391,24 @@ INSERT INTO canopysense.satellite_data (block_id, acquisition_date, sensor, clou
 (35, '2026-04-06', 'sentinel-2', 45.98, 0.6503369328671668, 0.467219137687526, 0.3396489454720654, 0.4307578532304242, 0.6232851540090636, '{"valid_pixel_ratio": 0.540248, "low_quality": false}'),
 (36, '2026-04-06', 'sentinel-2', 55.93, 0.8082147522300044, 0.6345078969839885, 0.4958250836096429, 0.546115407692057, 0.6900447093120927, '{"valid_pixel_ratio": 0.440664, "low_quality": false}')
 ON CONFLICT (block_id, acquisition_date, sensor) DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- Geografi UI — company + user testing data
+-- Run migration 002_company_subscriptions.sql after this seed for subscription data.
+-- ---------------------------------------------------------------------------
+
+-- Company: Geografi UI (id=2)
+INSERT INTO companies (id, company_id, company_name)
+VALUES (2, 'b4e7f912-3c1a-4d8e-9f2b-6a0d5c8e1f47', 'Geografi UI')
+ON CONFLICT (id) DO NOTHING;
+
+-- User: dikoharyadhanto — manager of Geografi UI (id=2)
+-- Password: [bcrypt] set by Director
+INSERT INTO users (id, company_id, email, full_name, username, password_hash, is_active)
+VALUES (2, 2, 'dikoharyadhanto74@gmail.com', 'Diko Haryadhanto', 'dikoharyadhanto',
+        '$2b$12$C6YC6u0x4YQSJMBD4vGsqeYUPf26MfTzDMVG/I7pZLnSUxbMx5VlO', true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO user_company_roles (user_id, company_id, role)
+VALUES (2, 2, 'manager')
+ON CONFLICT (user_id, company_id) DO NOTHING;

@@ -9,3 +9,4 @@ python-dotenv==1.0.1
 python-multipart==0.0.9
 celery==5.3.6
 redis==5.0.1
+earthengine-api>=0.1.418

@@ -18,6 +18,7 @@ class UserContext(BaseModel):
     username: str
     role: str | None
     company_id: int | None
+    subscription_tier: str | None
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), pool: asyncpg.Pool = Depends(get_db_pool)):
@@ -60,4 +61,5 @@ async def get_me(
         "username": current_user["username"],
         "role": current_user["role"],
         "company_id": current_user["company_id"],
+        "subscription_tier": current_user.get("subscription_tier"),
     }

@@ -41,7 +41,11 @@ from .cloud_masking import apply_cloud_mask
 from .harmonization import prepare_image
 from .index_calculator import calculate_indices
 from .quality_gate import build_valid_mask_band, passes_quality_gate, VALID_PIXEL_RATIO_THRESHOLD
-from .async_engine import ChunkResult, run_export, DEFAULT_CHUNK_SIZE
+try:
+    # async_engine requires geopandas — not installed in raster-serving environments
+    from .async_engine import ChunkResult, run_export, DEFAULT_CHUNK_SIZE
+except ImportError:
+    pass
 from .map_previewer import generate_preview
 
 __all__ = [
