@@ -154,3 +154,135 @@ export const listAuditLog = (params?: {
   api
     .get<PaginatedResponse<AuditEntry>>('/api/admin/audit', { params })
     .then((r) => r.data);
+
+// ---- Pipeline ----
+
+export interface PipelineEstate {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface PipelineAfdeling {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface PipelineRun {
+  id: number;
+  run_id: string;
+  mode: string;
+  company_id: number | null;
+  estate_id: number | null;
+  afdeling_id: number | null;
+  status: 'pending' | 'running' | 'succeeded' | 'failed';
+  date_start: string | null;
+  date_end: string | null;
+  exit_code: number | null;
+  sanitized_error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  actor_username: string;
+}
+
+export interface PipelineRunDetail {
+  run: PipelineRun;
+  batches: Array<{
+    id: number;
+    trigger_mode: string;
+    afdeling_id: number | null;
+    block_id: number | null;
+    status: string;
+    rows_inserted: number;
+    api_version: string | null;
+    triggered_at: string;
+    started_at: string | null;
+    estate_id: number | null;
+    date_start: string | null;
+    date_end: string | null;
+  }>;
+}
+
+export interface PipelineSchedule {
+  id: number;
+  created_by: number;
+  created_by_username: string;
+  mode: string;
+  company_id: number | null;
+  estate_id: number | null;
+  afdeling_id: number | null;
+  cadence: string;
+  timezone: string;
+  date_start: string | null;
+  date_end: string | null;
+  enabled: boolean;
+  next_run: string | null;
+  last_run: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const listEstatesForCompany = (companyId: number) =>
+  api
+    .get<{ items: PipelineEstate[] }>('/api/admin/pipeline/scopes/estates', {
+      params: { company_id: companyId },
+    })
+    .then((r) => r.data.items);
+
+export const listAfdelingsForEstate = (estateId: number) =>
+  api
+    .get<{ items: PipelineAfdeling[] }>('/api/admin/pipeline/scopes/afdelings', {
+      params: { estate_id: estateId },
+    })
+    .then((r) => r.data.items);
+
+export const triggerPipeline = (body: {
+  mode: string;
+  company_id: number;
+  estate_id: number;
+  afdeling_id?: number | null;
+  date_start?: string | null;
+  date_end?: string | null;
+}) =>
+  api
+    .post<{ run_id: string; status: string }>('/api/admin/pipeline/trigger', body)
+    .then((r) => r.data);
+
+export const listPipelineRuns = (params?: { page?: number; page_size?: number }) =>
+  api
+    .get<{ items: PipelineRun[]; total: number; page: number; page_size: number }>(
+      '/api/admin/pipeline/runs',
+      { params },
+    )
+    .then((r) => r.data);
+
+export const getPipelineRun = (runId: string) =>
+  api.get<PipelineRunDetail>(`/api/admin/pipeline/runs/${runId}`).then((r) => r.data);
+
+export const listPipelineSchedules = () =>
+  api.get<{ items: PipelineSchedule[] }>('/api/admin/pipeline/schedules').then((r) => r.data);
+
+export const createPipelineSchedule = (body: {
+  mode: string;
+  company_id: number;
+  estate_id: number;
+  afdeling_id?: number | null;
+  cadence: string;
+  timezone?: string;
+  date_start?: string | null;
+  date_end?: string | null;
+  first_run_at?: string | null;
+}) =>
+  api
+    .post<{ id: number; status: string }>('/api/admin/pipeline/schedules', body)
+    .then((r) => r.data);
+
+export const updatePipelineSchedule = (
+  scheduleId: number,
+  body: { enabled?: boolean; cadence?: string; timezone?: string; date_start?: string; date_end?: string },
+) =>
+  api
+    .patch<{ id: number; status: string }>(`/api/admin/pipeline/schedules/${scheduleId}`, body)
+    .then((r) => r.data);

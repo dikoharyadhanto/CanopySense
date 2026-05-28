@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     CLOUD_FUNCTION_URL: str = ""
     PATCHER_API_KEY: str = ""
     RASTER_CLOUD_TIMEOUT_SECONDS: int = 60
+    CONTRACTOR_ID: str = ""
+    FUNCTION_TIMEOUT_SECONDS: int = 120
+    PGSCHEMA: str = "canopysense"
+    PATCHER_API_VERSION: str = "1.1"
 
     class Config:
         env_file = ".env"

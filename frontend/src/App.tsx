@@ -16,6 +16,9 @@ import ManagerInvite from './pages/admin/ManagerInvite';
 import SubscriptionEdit from './pages/admin/SubscriptionEdit';
 import UserManagement from './pages/admin/UserManagement';
 import AuditLog from './pages/admin/AuditLog';
+import PipelineTrigger from './pages/admin/PipelineTrigger';
+import PipelineRunHistory from './pages/admin/PipelineRunHistory';
+import PipelineSchedules from './pages/admin/PipelineSchedules';
 
 function App() {
   return (
@@ -44,6 +47,9 @@ function App() {
             <Route path="/admin/companies/:companyId/subscription" element={<SubscriptionEdit />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/audit" element={<AuditLog />} />
+            <Route path="/admin/pipeline/trigger" element={<PipelineTrigger />} />
+            <Route path="/admin/pipeline/history" element={<PipelineRunHistory />} />
+            <Route path="/admin/pipeline/schedules" element={<PipelineSchedules />} />
           </Route>
         </Route>
 

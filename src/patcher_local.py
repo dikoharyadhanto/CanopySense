@@ -445,6 +445,8 @@ def main() -> int:
                         help=f"Backfill start month YYYY-MM (default: {default_start_ym})")
     parser.add_argument("--date-end",    default=None,
                         help=f"Backfill end month YYYY-MM (default: {default_end_ym})")
+    parser.add_argument("--run-id",      default=None,
+                        help="Pre-assigned run UUID (used when triggered from admin UI).")
     args = parser.parse_args()
 
     # Hierarchy validation
@@ -470,7 +472,7 @@ def main() -> int:
         logger.error("%s", exc); return 1
     timeout = int(os.environ.get("FUNCTION_TIMEOUT_SECONDS",120))
     schema  = os.environ.get("PGSCHEMA","canopysense")
-    run_id  = str(uuid.uuid4())
+    run_id  = args.run_id if args.run_id else str(uuid.uuid4())
     try:
         conn = _connect()
     except Exception as exc:
