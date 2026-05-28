@@ -236,7 +236,7 @@ async def get_run(
                FROM canopysense.patcher_run_log
                WHERE run_id = $1
                ORDER BY id""",
-            run_uuid,
+            str(run_uuid),
         )
 
     return {"run": dict(run), "batches": [dict(b) for b in batches]}

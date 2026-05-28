@@ -26,9 +26,12 @@ ALLOWED_CADENCES = frozenset({"daily", "weekly", "monthly"})
 _YM_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
 MAX_BACKFILL_MONTHS = 48
 
-# Resolved once at module load — never user-supplied
-PATCHER_LOCAL_PATH = (
-    pathlib.Path(__file__).parent.parent.parent.parent / "src" / "patcher_local.py"
+# Resolved once at module load — never user-supplied.
+# PATCHER_LOCAL_PATH env var overrides the default for Docker deployments
+# where the project root is mounted at a different path (e.g. /app/src vs /src).
+PATCHER_LOCAL_PATH = pathlib.Path(
+    os.environ.get("PATCHER_LOCAL_PATH")
+    or str(pathlib.Path(__file__).parent.parent.parent.parent / "src" / "patcher_local.py")
 )
 
 

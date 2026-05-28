@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { getMe } from '../lib/adminApi';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -21,7 +22,8 @@ export default function Login() {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       localStorage.setItem('token', response.data.access_token);
-      navigate('/dashboard');
+      const me = await getMe();
+      navigate(me.is_global_admin || me.is_admin ? '/admin' : '/dashboard');
     } catch {
       setError('Username atau password salah. Silakan coba lagi.');
     } finally {

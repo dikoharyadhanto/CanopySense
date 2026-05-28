@@ -35,6 +35,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CLOUD_FUNCTION_URL=${CLOUD_FUNCTION_URL:-}
       - PATCHER_API_KEY=${PATCHER_API_KEY:-}
+      - PATCHER_LOCAL_PATH=/app/src/patcher_local.py
     depends_on:
       - db
       - redis
