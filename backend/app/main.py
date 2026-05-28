@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth.routes import router as auth_router
 from app.api.blocks import router as blocks_router
 from app.api.raster import router as raster_router
+from app.api.admin.router import router as admin_router
 from app.database import init_db, close_db, init_redis, close_redis
 
 app = FastAPI(
@@ -32,6 +33,7 @@ async def shutdown_event():
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(blocks_router, prefix="/api", tags=["api"])
 app.include_router(raster_router, prefix="/api", tags=["raster"])
+app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
 
 @app.get("/health")
 async def health_check():

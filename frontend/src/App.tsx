@@ -4,14 +4,27 @@ import Dashboard from './pages/Dashboard';
 import ExploreMap from './pages/ExploreMap';
 import TimeSeries from './pages/TimeSeries';
 import Unavailable from './pages/Unavailable';
+import SetupAccount from './pages/SetupAccount';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
+import AdminRoute from './components/AdminRoute';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import CompanyList from './pages/admin/CompanyList';
+import CompanyDetail from './pages/admin/CompanyDetail';
+import ManagerInvite from './pages/admin/ManagerInvite';
+import SubscriptionEdit from './pages/admin/SubscriptionEdit';
+import UserManagement from './pages/admin/UserManagement';
+import AuditLog from './pages/admin/AuditLog';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/setup" element={<SetupAccount />} />
+
+        {/* Manager product surfaces */}
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -20,6 +33,20 @@ function App() {
             <Route path="/unavailable" element={<Unavailable />} />
           </Route>
         </Route>
+
+        {/* Admin surfaces (admin + super-admin only) */}
+        <Route element={<AdminRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/companies" element={<CompanyList />} />
+            <Route path="/admin/companies/:companyId" element={<CompanyDetail />} />
+            <Route path="/admin/companies/:companyId/invite" element={<ManagerInvite />} />
+            <Route path="/admin/companies/:companyId/subscription" element={<SubscriptionEdit />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/audit" element={<AuditLog />} />
+          </Route>
+        </Route>
+
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
