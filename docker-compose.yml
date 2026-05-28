@@ -33,6 +33,8 @@ services:
       - PGPASSWORD=postgres
       - PGDATABASE=canopysense
       - REDIS_URL=redis://redis:6379/0
+      - CLOUD_FUNCTION_URL=${CLOUD_FUNCTION_URL:-}
+      - PATCHER_API_KEY=${PATCHER_API_KEY:-}
     depends_on:
       - db
       - redis

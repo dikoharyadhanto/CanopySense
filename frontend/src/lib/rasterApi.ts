@@ -37,10 +37,24 @@ export interface UserContext {
   subscription_tier: 'basic' | 'premium' | null;
 }
 
+export interface RasterFrame {
+  frame_id: string;  // "YYYY-MM-DD" — actual acquisition date from satellite_data
+  label: string;     // "14 Oct 2026"
+  sensor: string;    // "S2", "L8", "L9"
+}
+
+export interface FrameList {
+  frames: RasterFrame[];
+  default_frame_id: string | null;
+  total_frames: number;
+}
+
 export interface FetchRasterParams {
   index?: string;
   date_start?: string;
   date_end?: string;
+  frame_id?: string;  // ISO date YYYY-MM-DD — timelapse frame selection
+  signal?: AbortSignal;
 }
 
 export class RasterApiError extends Error {
@@ -55,10 +69,29 @@ export class RasterApiError extends Error {
 export async function fetchRasterMetadata(
   params: FetchRasterParams = {},
 ): Promise<RasterMetadata> {
+  const { signal, ...queryParams } = params;
   try {
-    const res = await api.get<RasterMetadata>('/api/raster/metadata', { params });
+    const res = await api.get<RasterMetadata>('/api/raster/metadata', { params: queryParams, signal });
     return res.data;
   } catch (err) {
+    // Re-throw axios cancel errors so callers can detect and silently discard stale requests
+    if ((err as { code?: string }).code === 'ERR_CANCELED') throw err;
+    const axiosErr = err as AxiosError<{ detail?: string }>;
+    const status = axiosErr.response?.status ?? 0;
+    const detail = axiosErr.response?.data?.detail ?? axiosErr.message;
+    throw new RasterApiError(status, detail);
+  }
+}
+
+export async function fetchRasterFrames(
+  index: string,
+  signal?: AbortSignal,
+): Promise<FrameList> {
+  try {
+    const res = await api.get<FrameList>('/api/raster/frames', { params: { index }, signal });
+    return res.data;
+  } catch (err) {
+    if ((err as { code?: string }).code === 'ERR_CANCELED') throw err;
     const axiosErr = err as AxiosError<{ detail?: string }>;
     const status = axiosErr.response?.status ?? 0;
     const detail = axiosErr.response?.data?.detail ?? axiosErr.message;

@@ -19,7 +19,7 @@ import os
 import pathlib
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from ipaddress import ip_address, ip_network
 from typing import Any
 
@@ -29,6 +29,8 @@ from google.cloud import secretmanager
 
 logger = logging.getLogger(__name__)
 _API_VERSION = "1.1"
+_RASTER_SUPPORTED_INDICES: tuple[str, ...] = ("ndvi", "evi", "savi", "gndvi", "ndre")
+_RASTER_SERVING_MODES: tuple[str, ...] = ("gee_mapid", "maps_platform")
 
 _SECRET_CLIENT: secretmanager.SecretManagerServiceClient | None = None
 
@@ -92,10 +94,71 @@ def _fetch_gee_credentials() -> tuple[str, str, str]:
     return key_json_str, key_data.get("client_email", ""), key_data.get("project_id", "")
 
 
-def _parse_request_meta(request) -> tuple[str | None, str | None, str | None]:
-    """Extract optional mode, date_start, date_end from request body. Absent fields return None."""
+def _parse_raster_metadata_request(request) -> "dict | str":
+    """Parse and validate a raster_metadata mode request body. Returns payload dict on success, error str on failure."""
     body = request.get_json(silent=True) or {}
-    return body.get("mode"), body.get("date_start"), body.get("date_end")
+    aoi = body.get("aoi_geojson")
+    if not aoi or not isinstance(aoi, dict):
+        return "400 Bad Request: Missing or invalid aoi_geojson"
+    if aoi.get("type") not in ("Polygon", "MultiPolygon", "FeatureCollection"):
+        return "400 Bad Request: aoi_geojson.type must be Polygon, MultiPolygon, or FeatureCollection"
+    index = body.get("index")
+    if index not in _RASTER_SUPPORTED_INDICES:
+        return f"400 Bad Request: index must be one of {_RASTER_SUPPORTED_INDICES}"
+    serving_mode = body.get("serving_mode")
+    if serving_mode not in _RASTER_SERVING_MODES:
+        return f"400 Bad Request: serving_mode must be one of {_RASTER_SERVING_MODES}"
+    subscription_tier = body.get("subscription_tier")
+    if subscription_tier not in ("basic", "premium"):
+        return "400 Bad Request: subscription_tier must be 'basic' or 'premium'"
+    timelapse_period_months = body.get("timelapse_period_months")
+    if timelapse_period_months is not None and not isinstance(timelapse_period_months, int):
+        return "400 Bad Request: timelapse_period_months must be an integer or null"
+    date_start = body.get("date_start")
+    date_end = body.get("date_end")
+    for field_name, field_val in (("date_start", date_start), ("date_end", date_end)):
+        if field_val is not None:
+            try:
+                date.fromisoformat(str(field_val))
+            except (ValueError, TypeError):
+                return f"400 Bad Request: {field_name} must be ISO date (YYYY-MM-DD)"
+    return {
+        "aoi_geojson": aoi,
+        "index": index,
+        "serving_mode": serving_mode,
+        "subscription_tier": subscription_tier,
+        "timelapse_period_months": timelapse_period_months,
+        "date_start": date_start,
+        "date_end": date_end,
+    }
+
+
+def _handle_raster_metadata(payload: dict) -> dict:
+    """Invoke raster_engine.generate_metadata() with validated payload. Returns result dict."""
+    sys.path.insert(0, str(pathlib.Path(__file__).parent))
+    try:
+        from raster_engine import (  # noqa: PLC0415
+            generate_metadata,
+            RasterEngineError,
+            SubscriptionAccessError,
+        )
+    except ImportError as exc:
+        return {"ok": False, "code": 503, "error": f"503 Service Unavailable: Raster engine not available — {exc}"}
+    try:
+        metadata = generate_metadata(
+            index=payload["index"],
+            serving_mode=payload["serving_mode"],
+            subscription_tier=payload["subscription_tier"],
+            timelapse_period_months=payload["timelapse_period_months"],
+            aoi_geojson=payload["aoi_geojson"],
+            date_start=payload["date_start"],
+            date_end=payload["date_end"],
+        )
+        return {"ok": True, "metadata": metadata.to_dict()}
+    except SubscriptionAccessError as exc:
+        return {"ok": False, "code": 403, "error": f"403 Forbidden: {exc}"}
+    except RasterEngineError as exc:
+        return {"ok": False, "code": 503, "error": f"503 Service Unavailable: {exc}"}
 
 
 def _parse_blocks(request) -> tuple[gpd.GeoDataFrame | None, Any]:
@@ -203,15 +266,38 @@ def patcher_cloud(request):  # type: ignore[no-untyped-def]
             _audit(contractor_id, "REJECTED", f"IP blocked: {source_ip}")
             return _resp({"error": "403 Forbidden: Source IP not authorized"}, 403)
 
-    # ── 6. Parse and validate blocks + optional request metadata ─────────────
-    req_mode, req_date_start, req_date_end = _parse_request_meta(request)
+    # ── 6. Route by request mode ─────────────────────────────────────────────
+    req_mode = (request.get_json(silent=True) or {}).get("mode")
+
+    if req_mode == "raster_metadata":
+        raster_payload = _parse_raster_metadata_request(request)
+        if isinstance(raster_payload, str):
+            _audit(contractor_id, "REJECTED", raster_payload)
+            return _resp({"error": raster_payload}, 400)
+        try:
+            gee_key_json, gee_email, ee_project_id = _fetch_gee_credentials()
+        except Exception as exc:
+            logger.error("GEE credentials fetch failed: %s", exc)
+            return _resp({"error": "500 Internal Server Error: GEE credentials unavailable"}, 500)
+        os.environ["EE_SERVICE_ACCOUNT_KEY_JSON"] = gee_key_json
+        os.environ["EE_SERVICE_ACCOUNT"] = gee_email
+        if ee_project_id:
+            os.environ["EE_PROJECT_ID"] = ee_project_id
+        result = _handle_raster_metadata(raster_payload)
+        if not result["ok"]:
+            _audit(contractor_id, "RASTER_ERROR", result["error"])
+            return _resp({"error": result["error"]}, result["code"])
+        _audit(contractor_id, "RASTER_SUCCESS", f"index={raster_payload['index']} tier={raster_payload['subscription_tier']}")
+        return _resp({"status": "success", "metadata": result["metadata"]}, 200)
+
+    # ── 7. Parse and validate blocks from request body (Option B) ─────────────
     blocks_gdf, payload = _parse_blocks(request)
     if blocks_gdf is None:
         _audit(contractor_id, "REJECTED", payload)
         return _resp({"error": payload}, 400)
     input_block_ids: list[int] = payload
 
-    # ── 7. Load GEE credentials ──────────────────────────────────────────────
+    # ── 8. Load GEE credentials ──────────────────────────────────────────────
     try:
         gee_key_json, gee_email, ee_project_id = _fetch_gee_credentials()
     except Exception as exc:
@@ -222,8 +308,11 @@ def patcher_cloud(request):  # type: ignore[no-untyped-def]
     if ee_project_id:
         os.environ["EE_PROJECT_ID"] = ee_project_id
 
-    # ── 8. Invoke core engine ────────────────────────────────────────────────
-    _audit(contractor_id, "AUTH_OK", f"Triggering core engine — {len(input_block_ids)} blocks | mode={req_mode or 'scheduled'} | window={req_date_start or 'default'}→{req_date_end or 'default'}")
+    # ── 9. Invoke core engine ────────────────────────────────────────────────
+    patcher_body = request.get_json(silent=True) or {}
+    req_date_start: str | None = patcher_body.get("date_start")
+    req_date_end: str | None = patcher_body.get("date_end")
+    _audit(contractor_id, "AUTH_OK", f"Triggering core engine — {len(input_block_ids)} blocks | window={req_date_start or 'default'}→{req_date_end or 'default'}")
     timeout = int(os.environ.get("FUNCTION_TIMEOUT_SECONDS", 120))
     output_dir = pathlib.Path(tempfile.mkdtemp(prefix="cs_output_"))
 
@@ -247,7 +336,7 @@ def patcher_cloud(request):  # type: ignore[no-untyped-def]
                 500,
             )
 
-    # ── 9. Return processed records + block-level error classification ────────
+    # ── 10. Return processed records + block-level error classification ────────
     records = _read_records(output_dir)
     errors = _build_errors(input_block_ids, records)
     _audit(contractor_id, "SUCCESS", f"rows={len(records)} errors={len(errors)}")

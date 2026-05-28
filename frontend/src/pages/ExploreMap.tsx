@@ -4,10 +4,11 @@ import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import {
   fetchRasterMetadata,
+  fetchRasterFrames,
   fetchUserContext,
   RasterApiError,
 } from '../lib/rasterApi';
-import type { RasterMetadata, UserContext, FetchRasterParams } from '../lib/rasterApi';
+import type { RasterMetadata, RasterFrame, UserContext, FetchRasterParams } from '../lib/rasterApi';
 import api from '../lib/api';
 import { clearToken } from '../lib/auth';
 
@@ -51,8 +52,8 @@ function errorLabel(status: number, message: string): { title: string; body: str
       };
     case 403:
       return {
-        title: 'Tanggal di Luar Rentang',
-        body: message || 'Tanggal yang dipilih berada di luar rentang timelapse yang diizinkan.',
+        title: 'Akses Ditolak',
+        body: message || 'Akses ke frame ini tidak diizinkan oleh subscription Anda.',
       };
     case 404:
       return {
@@ -62,7 +63,7 @@ function errorLabel(status: number, message: string): { title: string; body: str
     case 503:
       return {
         title: 'GEE Tidak Tersedia',
-        body: message || 'Google Earth Engine tidak tersedia atau tidak ada citra untuk periode ini. Coba lagi beberapa saat.',
+        body: message || 'Google Earth Engine tidak tersedia atau tidak ada citra untuk frame ini. Coba frame lain.',
       };
     default:
       return { title: `Gagal Memuat Raster (${status || 'Network'})`, body: message };
@@ -86,10 +87,13 @@ export default function ExploreMap() {
   const [loading, setLoading] = useState(true);
   const [rasterError, setRasterError] = useState<{ status: number; message: string } | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<SupportedIndex>('ndvi');
-  const [pendingDateStart, setPendingDateStart] = useState('');
-  const [pendingDateEnd, setPendingDateEnd] = useState('');
-  const [appliedDateStart, setAppliedDateStart] = useState('');
-  const [appliedDateEnd, setAppliedDateEnd] = useState('');
+
+  // Timelapse frame state (Premium only)
+  const [frames, setFrames] = useState<RasterFrame[]>([]);
+  const [frameIndex, setFrameIndex] = useState(0);
+  const [framesLoading, setFramesLoading] = useState(false);
+  const [framesError, setFramesError] = useState<string | null>(null);
+
   const [opacity, setOpacity] = useState(0.85);
   const [showBlockOverlay, setShowBlockOverlay] = useState(false);
   const [blockFeatures, setBlockFeatures] = useState<GeoJSON.FeatureCollection | null>(null);
@@ -99,21 +103,24 @@ export default function ExploreMap() {
 
   const isPremium = userCtx?.subscription_tier === 'premium';
 
-  const doFetch = useCallback(async (
-    index: string,
-    dateStart?: string,
-    dateEnd?: string,
-  ) => {
+  // AbortController for in-flight raster fetch — cancels stale requests on rapid frame changes
+  const abortRef = useRef<AbortController | null>(null);
+
+  const doFetch = useCallback(async (index: string, frameId?: string) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setRasterError(null);
     setTileError(false);
     try {
-      const params: FetchRasterParams = { index };
-      if (dateStart) params.date_start = dateStart;
-      if (dateEnd) params.date_end = dateEnd;
+      const params: FetchRasterParams = { index, signal: controller.signal };
+      if (frameId) params.frame_id = frameId;
       const data = await fetchRasterMetadata(params);
       setMetadata(data);
     } catch (err) {
+      if ((err as { code?: string }).code === 'ERR_CANCELED') return;
       if (err instanceof RasterApiError) {
         if (err.status === 401) {
           clearToken();
@@ -124,15 +131,47 @@ export default function ExploreMap() {
         setMetadata(null);
       }
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [navigate]);
 
-  // Initial load: fetch user context and raster in parallel
-  useEffect(() => {
-    fetchUserContext().then(setUserCtx).catch(() => {});
-    doFetch('ndvi');
+  const loadFrames = useCallback(async (index: string) => {
+    setFramesLoading(true);
+    setFramesError(null);
+    try {
+      const data = await fetchRasterFrames(index);
+      setFrames(data.frames);
+      setFrameIndex(0);
+      if (data.frames.length > 0) {
+        doFetch(index, data.frames[0].frame_id);
+      } else {
+        // No satellite data for this company/index — honest empty state
+        setLoading(false);
+        setMetadata(null);
+      }
+    } catch (err) {
+      if (err instanceof RasterApiError) {
+        setFramesError(err.message);
+      }
+      setLoading(false);
+    } finally {
+      setFramesLoading(false);
+    }
   }, [doFetch]);
+
+  // Initial load: fetch user context; then load frames (Premium) or latest scene (Basic)
+  useEffect(() => {
+    fetchUserContext().then(ctx => {
+      setUserCtx(ctx);
+      if (ctx.subscription_tier === 'premium') {
+        loadFrames('ndvi');
+      } else {
+        doFetch('ndvi');
+      }
+    }).catch(() => {
+      doFetch('ndvi');
+    });
+  }, [doFetch, loadFrames]);
 
   // Load block geometries when overlay is first enabled (context-only, outline)
   useEffect(() => {
@@ -152,26 +191,33 @@ export default function ExploreMap() {
 
   const handleIndexChange = (idx: SupportedIndex) => {
     setSelectedIndex(idx);
-    doFetch(idx, appliedDateStart || undefined, appliedDateEnd || undefined);
+    if (isPremium) {
+      loadFrames(idx);
+    } else {
+      doFetch(idx);
+    }
   };
 
-  const handleApplyDates = () => {
-    setAppliedDateStart(pendingDateStart);
-    setAppliedDateEnd(pendingDateEnd);
-    doFetch(
-      selectedIndex,
-      pendingDateStart || undefined,
-      pendingDateEnd || undefined,
-    );
+  const handleFrameChange = (newIndex: number) => {
+    setFrameIndex(newIndex);
+    doFetch(selectedIndex, frames[newIndex].frame_id);
   };
 
   const handleRefresh = () => {
-    doFetch(selectedIndex, appliedDateStart || undefined, appliedDateEnd || undefined);
+    if (isPremium && frames.length > 0) {
+      doFetch(selectedIndex, frames[frameIndex].frame_id);
+    } else if (isPremium) {
+      loadFrames(selectedIndex);
+    } else {
+      doFetch(selectedIndex);
+    }
   };
 
   const subscriptionLabel = userCtx
-    ? isPremium ? 'Premium — Timelapse aktif' : 'Basic — Data Terbaru'
+    ? isPremium ? 'Premium — Timelapse' : 'Basic — Data Terbaru'
     : '';
+
+  const currentFrame = frames[frameIndex] ?? null;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -179,7 +225,7 @@ export default function ExploreMap() {
       <div className="bg-white border-b border-gray-100 px-4 py-2 flex-shrink-0 flex items-center gap-3 flex-wrap">
         <h1 className="text-sm font-bold text-gray-800 flex-shrink-0">Explore Map</h1>
 
-        {/* Index selector (TASK-004) */}
+        {/* Index selector */}
         <div className="flex items-center gap-1">
           {SUPPORTED_INDICES.map((idx) => (
             <button
@@ -197,36 +243,9 @@ export default function ExploreMap() {
           ))}
         </div>
 
-        {/* Date controls — premium only (TASK-005) */}
-        {isPremium && (
-          <div className="flex items-center gap-2" data-testid="date-controls">
-            <input
-              type="date"
-              value={pendingDateStart}
-              onChange={(e) => setPendingDateStart(e.target.value)}
-              className="text-xs border border-gray-200 rounded px-2 py-1"
-              aria-label="Tanggal mulai"
-            />
-            <span className="text-gray-400 text-xs">—</span>
-            <input
-              type="date"
-              value={pendingDateEnd}
-              onChange={(e) => setPendingDateEnd(e.target.value)}
-              className="text-xs border border-gray-200 rounded px-2 py-1"
-              aria-label="Tanggal akhir"
-            />
-            <button
-              onClick={handleApplyDates}
-              className="px-2.5 py-1 text-xs font-semibold rounded-md bg-[#1B3A2D] text-white hover:bg-[#264d3a] transition-colors"
-            >
-              Terapkan
-            </button>
-          </div>
-        )}
-
         <div className="flex-1" />
 
-        {/* Subscription badge (TASK-005) */}
+        {/* Subscription badge */}
         {subscriptionLabel && (
           <span
             data-testid="subscription-badge"
@@ -258,6 +277,81 @@ export default function ExploreMap() {
         </div>
       </div>
 
+      {/* Timelapse controls — Premium only */}
+      {isPremium && (
+        <div
+          data-testid="timelapse-controls"
+          className="bg-gray-50 border-b border-gray-100 px-4 py-2 flex-shrink-0 flex items-center gap-3"
+        >
+          {framesLoading ? (
+            <span className="text-xs text-gray-400">Memuat daftar citra...</span>
+          ) : framesError ? (
+            <span className="text-xs text-red-500">{framesError}</span>
+          ) : frames.length === 0 ? (
+            <span
+              data-testid="no-frames-message"
+              className="text-xs text-gray-500"
+            >
+              Tidak ada data satelit tersedia untuk estate ini. Data akan muncul setelah pipeline dijadwalkan berikutnya.
+            </span>
+          ) : (
+            <>
+              {/* Prev frame */}
+              <button
+                data-testid="prev-frame-btn"
+                onClick={() => handleFrameChange(Math.min(frameIndex + 1, frames.length - 1))}
+                disabled={frameIndex >= frames.length - 1}
+                aria-label="Frame sebelumnya"
+                className="p-1 rounded text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Timeline slider — each position is a valid acquisition date */}
+              <div className="flex-1 flex flex-col gap-0.5">
+                <input
+                  data-testid="timelapse-slider"
+                  type="range"
+                  min={0}
+                  max={Math.max(frames.length - 1, 0)}
+                  value={frameIndex}
+                  onChange={(e) => handleFrameChange(Number(e.target.value))}
+                  className="w-full accent-[#1B3A2D]"
+                  aria-label="Pilih frame timelapse"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400 px-0.5">
+                  <span>{frames[frames.length - 1]?.label ?? ''}</span>
+                  <span>{frames[0]?.label ?? ''}</span>
+                </div>
+              </div>
+
+              {/* Next frame */}
+              <button
+                data-testid="next-frame-btn"
+                onClick={() => handleFrameChange(Math.max(frameIndex - 1, 0))}
+                disabled={frameIndex <= 0}
+                aria-label="Frame berikutnya"
+                className="p-1 rounded text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              {/* Current frame label */}
+              <span
+                data-testid="frame-label"
+                className="text-xs font-semibold text-gray-700 min-w-[88px] text-right"
+              >
+                {currentFrame?.label ?? '—'}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Map area */}
       <div className="flex-1 relative" style={{ minHeight: 0 }}>
         <MapContainer
@@ -265,14 +359,14 @@ export default function ExploreMap() {
           zoom={5}
           style={{ height: '100%', width: '100%' }}
         >
-          {/* Basemap (TASK-003) */}
+          {/* Basemap */}
           <TileLayer
             key={basemap}
             attribution={BASEMAPS[basemap].attribution}
             url={BASEMAPS[basemap].url}
           />
 
-          {/* Raster tile layer from backend tile_url_format (TASK-003) */}
+          {/* Raster tile layer from backend tile_url_format */}
           {metadata && (
             <>
               <AutoFitBounds bounds={metadata.bounds} />
@@ -295,7 +389,7 @@ export default function ExploreMap() {
             </>
           )}
 
-          {/* Block boundary overlay — context-only outline, no fill (TASK-007, TASK-009) */}
+          {/* Block boundary overlay — context-only outline, no fill */}
           {showBlockOverlay && blockFeatures && (
             <GeoJSON
               key="block-overlay"
@@ -305,7 +399,7 @@ export default function ExploreMap() {
           )}
         </MapContainer>
 
-        {/* Right-side controls (TASK-007) */}
+        {/* Right-side controls */}
         <div
           style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}
           className="flex flex-col gap-2"
@@ -357,7 +451,7 @@ export default function ExploreMap() {
           </button>
         </div>
 
-        {/* Metadata + legend panel — bottom left (TASK-006) */}
+        {/* Metadata + legend panel — bottom left */}
         {metadata && !rasterError && (
           <div
             style={{ position: 'absolute', bottom: 28, left: 10, zIndex: 1000, maxWidth: 270 }}
@@ -369,7 +463,7 @@ export default function ExploreMap() {
               className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-gray-50/80 transition-colors"
             >
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex-1">
-                {metadata.index.toUpperCase()} · {metadata.sensor} · {metadata.date_acquired}
+                Per-piksel {metadata.index.toUpperCase()} · {metadata.sensor} · {metadata.date_acquired}
               </span>
               <svg
                 className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${legendOpen ? 'rotate-180' : ''}`}
@@ -381,7 +475,7 @@ export default function ExploreMap() {
 
             {legendOpen && (
               <div className="px-3 pb-3 border-t border-gray-100 space-y-2" data-testid="legend-content">
-                {/* Dynamic legend from metadata palette/viz_min/viz_max (AC-006) */}
+                {/* Dynamic legend from metadata palette/viz_min/viz_max */}
                 <div className="pt-2">
                   <div
                     className="h-3 rounded"
@@ -398,14 +492,12 @@ export default function ExploreMap() {
                 </div>
 
                 <div className="space-y-1 text-[11px]">
+                  <MetaRow label="Tanggal citra" value={metadata.date_acquired} />
+                  <MetaRow label="Sensor" value={metadata.sensor} />
                   <MetaRow label="Resolusi" value={`${metadata.resolution_m}m/piksel`} />
                   <MetaRow
                     label="Piksel valid"
                     value={`${(metadata.valid_pixel_ratio * 100).toFixed(1)}%`}
-                  />
-                  <MetaRow
-                    label="Window"
-                    value={`${metadata.date_window_start} — ${metadata.date_window_end}`}
                   />
                   <MetaRow
                     label="Dibuat"
@@ -426,16 +518,16 @@ export default function ExploreMap() {
                   {metadata.cloud_nodata_note}
                 </p>
 
-                {/* Pixel vs block separation note (AC-007) */}
+                {/* Per-pixel raster explanation — not block average */}
                 <p className="text-[10px] text-blue-500 leading-relaxed border-t border-gray-100 pt-1.5">
-                  Piksel raster ≠ nilai ringkasan per blok di Dashboard.
+                  Nilai piksel mencerminkan reflektansi permukaan per piksel (cloud-masked). Bukan rata-rata nilai per blok.
                 </p>
               </div>
             )}
           </div>
         )}
 
-        {/* Loading overlay (TASK-008) */}
+        {/* Loading overlay */}
         {loading && (
           <div
             data-testid="loading-overlay"
@@ -449,7 +541,7 @@ export default function ExploreMap() {
           </div>
         )}
 
-        {/* Error overlay — honest states per HTTP status (TASK-008, AC-008) */}
+        {/* Error overlay — honest states per HTTP status */}
         {!loading && rasterError && (
           <div
             data-testid="error-overlay"
@@ -488,7 +580,7 @@ export default function ExploreMap() {
           </div>
         )}
 
-        {/* Tile expired guidance (TASK-008, AC-009) */}
+        {/* Tile expired guidance */}
         {tileError && !loading && !rasterError && (
           <div
             data-testid="tile-error-banner"

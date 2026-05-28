@@ -34,18 +34,19 @@ def build_cache_key(
     date_start: str,
     date_end: str,
     serving_mode: str,
+    frame_id: str | None = None,
 ) -> str:
     """
     Build a deterministic company-scoped cache key for raster metadata.
 
-    All five dimensions are required to make the key unique:
-      - company_id: subscription authority scope
-      - index:      vegetation index (ndvi, evi, etc.)
-      - date_start / date_end: raster search window
-      - serving_mode: gee_mapid or maps_platform
+    When frame_id is provided (timelapse frame selection), the key uses
+    the frame's acquisition date as its time dimension to ensure two different
+    frames never share a cache entry.
 
     Returns a string suitable for use as a Redis key.
     """
+    if frame_id is not None:
+        return f"{_CACHE_KEY_PREFIX}:{company_id}:{index}:frame:{frame_id}:{serving_mode}"
     return f"{_CACHE_KEY_PREFIX}:{company_id}:{index}:{date_start}:{date_end}:{serving_mode}"
 
 

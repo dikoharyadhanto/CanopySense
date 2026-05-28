@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Raster cache TTL in seconds. Default 43200 (12h) — referenced from GEE
     # getMapId() ~48h empirical window. Configurable; not a product guarantee.
     RASTER_CACHE_TTL_SECONDS: int = 43200
+    CLOUD_FUNCTION_URL: str = ""
+    PATCHER_API_KEY: str = ""
+    RASTER_CLOUD_TIMEOUT_SECONDS: int = 60
 
     class Config:
         env_file = ".env"

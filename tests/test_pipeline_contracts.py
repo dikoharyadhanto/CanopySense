@@ -649,15 +649,15 @@ class TestTC007BackfillChunking:
 # ===========================================================================
 
 class TestTC008CloudFunctionContract:
-    """TC-008: _parse_request_meta() extracts mode/date; missing fields return None."""
+    """TC-008: raster_metadata mode routing and date extraction exist in Cloud Function."""
 
-    def test_parse_request_meta_function_exists(self):
+    def test_parse_raster_metadata_request_function_exists(self):
         source = (_SRC / "patcher_cloud_function.py").read_text()
-        assert "_parse_request_meta" in source
+        assert "_parse_raster_metadata_request" in source
 
-    def test_parse_request_meta_returns_mode(self):
+    def test_mode_routing_reads_mode_field(self):
         source = (_SRC / "patcher_cloud_function.py").read_text()
-        assert 'body.get("mode")' in source or "body.get('mode')" in source
+        assert '.get("mode")' in source or ".get('mode')" in source
 
     def test_parse_request_meta_returns_date_start(self):
         source = (_SRC / "patcher_cloud_function.py").read_text()
@@ -889,6 +889,76 @@ class TestTC011LoggingSchema:
         assert "ON CONFLICT (window_start, window_end, batch_fp) DO NOTHING" in source, (
             "historical_backfill.py must use the 3-column conflict key — "
             "the old (window_start, window_end) constraint no longer exists"
+        )
+
+
+# ===========================================================================
+# TC-008b: src/deploy/main.py must stay aligned with patcher_cloud_function.py
+#          (deploy-source drift detection)
+# ===========================================================================
+
+class TestTC008bDeployMainAlignment:
+    """TC-008b: deploy/main.py must have the same date window and mode routing
+    behavior as patcher_cloud_function.py (the dev source). Any drift here
+    would silently break backfill date windows on the deployed Cloud Function."""
+
+    def test_deploy_main_has_parse_raster_metadata_request(self):
+        """deploy/main.py must define _parse_raster_metadata_request."""
+        source = (_SRC / "deploy" / "main.py").read_text()
+        assert "_parse_raster_metadata_request" in source, (
+            "src/deploy/main.py is missing _parse_raster_metadata_request — "
+            "it will not handle mode=raster_metadata requests after deploy"
+        )
+
+    def test_deploy_main_has_mode_routing(self):
+        """deploy/main.py must route on mode=raster_metadata before patcher branch."""
+        source = (_SRC / "deploy" / "main.py").read_text()
+        assert 'req_mode == "raster_metadata"' in source or "req_mode == 'raster_metadata'" in source, (
+            "src/deploy/main.py is missing raster_metadata mode routing"
+        )
+
+    def test_deploy_main_run_engine_accepts_date_params(self):
+        """deploy/main.py _run_engine must accept date_start and date_end."""
+        import ast
+        source = (_SRC / "deploy" / "main.py").read_text()
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name == "_run_engine":
+                param_names = [a.arg for a in node.args.args]
+                assert "date_start" in param_names, (
+                    "src/deploy/main.py _run_engine() is missing date_start — "
+                    "backfill date windows will be silently dropped on deploy"
+                )
+                assert "date_end" in param_names, (
+                    "src/deploy/main.py _run_engine() is missing date_end"
+                )
+                return
+        pytest.fail("_run_engine() not found in src/deploy/main.py")
+
+    def test_deploy_main_run_engine_passes_dates_to_run_pipeline(self):
+        """deploy/main.py _run_engine must pass date_start/date_end to run_pipeline."""
+        source = (_SRC / "deploy" / "main.py").read_text()
+        assert "run_pipeline(blocks_gdf=blocks_gdf, date_start=date_start, date_end=date_end)" in source, (
+            "src/deploy/main.py _run_engine does not pass date_start/date_end to run_pipeline — "
+            "backfill date window will be silently ignored on the deployed function"
+        )
+
+    def test_deploy_main_patcher_branch_reads_date_window(self):
+        """deploy/main.py patcher branch must read req_date_start and req_date_end from body."""
+        source = (_SRC / "deploy" / "main.py").read_text()
+        assert "req_date_start" in source, (
+            "src/deploy/main.py patcher branch missing req_date_start extraction"
+        )
+        assert "req_date_end" in source, (
+            "src/deploy/main.py patcher branch missing req_date_end extraction"
+        )
+
+    def test_deploy_main_passes_date_window_to_executor(self):
+        """deploy/main.py must pass req_date_start and req_date_end to executor.submit."""
+        source = (_SRC / "deploy" / "main.py").read_text()
+        assert "executor.submit(_run_engine, output_dir, blocks_gdf, req_date_start, req_date_end)" in source, (
+            "src/deploy/main.py does not pass date window to executor.submit — "
+            "backfill windows will be silently dropped on the deployed Cloud Function"
         )
 
 

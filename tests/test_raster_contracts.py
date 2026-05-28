@@ -536,3 +536,141 @@ class TestCacheExpiryProviderDriven:
         assert "ttl_seconds" in src, (
             "set_cached_metadata must accept ttl_seconds as parameter"
         )
+
+
+# ---------------------------------------------------------------------------
+# TC-003 (v1.9): date_acquired fix — must come from GEE scene, not actual_end
+# ---------------------------------------------------------------------------
+
+class TestDateAcquiredFix:
+    def test_date_acquired_bug_not_present_in_src_engine(self):
+        """TC-003: raster_engine.py must not assign date_acquired=actual_end."""
+        path = _REPO_ROOT / "src" / "raster_engine.py"
+        src = path.read_text(encoding="utf-8")
+        assert "date_acquired=actual_end" not in src, (
+            "BUG REGRESSED: date_acquired=actual_end found in src/raster_engine.py. "
+            "Must use scene.image.date().format('YYYY-MM-dd').getInfo() instead."
+        )
+
+    def test_date_acquired_fix_present_in_src_engine(self):
+        """TC-003: scene.image.date() call must be present for actual acquisition date."""
+        path = _REPO_ROOT / "src" / "raster_engine.py"
+        src = path.read_text(encoding="utf-8")
+        assert "scene.image.date()" in src, (
+            "Fix not found: scene.image.date() must be used to derive date_acquired."
+        )
+        assert "getInfo()" in src, (
+            "getInfo() call required for scene.image.date().format().getInfo() derivation."
+        )
+
+    def test_date_acquired_failure_raises_raster_engine_error(self):
+        """TC-003: If GEE date call fails, RasterEngineError must be raised (no silent fallback)."""
+        path = _REPO_ROOT / "src" / "raster_engine.py"
+        src = path.read_text(encoding="utf-8")
+        assert "RasterEngineError" in src, "RasterEngineError must be raised on date derivation failure."
+        assert "Cannot read scene acquisition date" in src, (
+            "Error message for date derivation failure must be explicit."
+        )
+
+    def test_deploy_package_date_acquired_fix_in_sync(self):
+        """TC-003: src/deploy/raster_engine.py must carry the same fix as src/raster_engine.py."""
+        path = _REPO_ROOT / "src" / "deploy" / "raster_engine.py"
+        src = path.read_text(encoding="utf-8")
+        assert "date_acquired=actual_end" not in src, (
+            "SYNC ERROR: date_acquired=actual_end still in src/deploy/raster_engine.py. "
+            "Deploy package must be kept in sync with src/raster_engine.py."
+        )
+        assert "scene.image.date()" in src, (
+            "Deploy package must also use scene.image.date() for date_acquired."
+        )
+
+
+# ---------------------------------------------------------------------------
+# TC-013 (v1.9): Frame cache key isolation — frame_id must produce unique keys
+# ---------------------------------------------------------------------------
+
+class TestFrameCacheKeyIsolation:
+    def _import_cache(self):
+        backend_dir = _REPO_ROOT / "backend"
+        if str(backend_dir) not in sys.path:
+            sys.path.insert(0, str(backend_dir))
+        from app.api.raster_cache import build_cache_key
+        return build_cache_key
+
+    def test_different_frame_ids_get_different_keys(self):
+        """TC-013: Two different frames must not share a cache entry."""
+        build_cache_key = self._import_cache()
+        key1 = build_cache_key(2, "ndvi", "2026-09-24", "2026-09-25", "maps_platform", frame_id="2026-09-24")
+        key2 = build_cache_key(2, "ndvi", "2026-10-14", "2026-10-15", "maps_platform", frame_id="2026-10-14")
+        assert key1 != key2, "Different frame_ids must produce different cache keys."
+
+    def test_frame_id_key_differs_from_window_key_same_dates(self):
+        """TC-013: frame_id cache key must not collide with non-frame_id key for same dates."""
+        build_cache_key = self._import_cache()
+        frame_key = build_cache_key(2, "ndvi", "2026-09-24", "2026-09-25", "maps_platform", frame_id="2026-09-24")
+        window_key = build_cache_key(2, "ndvi", "2026-09-24", "2026-09-25", "maps_platform")
+        assert frame_key != window_key, "frame_id path must not collide with date-window path."
+
+    def test_frame_key_is_company_scoped(self):
+        """TC-013: Company isolation must hold for frame_id keys."""
+        build_cache_key = self._import_cache()
+        key_c1 = build_cache_key(1, "ndvi", "2026-09-24", "2026-09-25", "maps_platform", frame_id="2026-09-24")
+        key_c2 = build_cache_key(2, "ndvi", "2026-09-24", "2026-09-25", "maps_platform", frame_id="2026-09-24")
+        assert key_c1 != key_c2, "Same frame must have different keys for different companies."
+
+    def test_frame_key_contains_frame_id_value(self):
+        """TC-013: Cache key must embed frame_id for debuggability."""
+        build_cache_key = self._import_cache()
+        key = build_cache_key(2, "ndvi", "2026-09-24", "2026-09-25", "maps_platform", frame_id="2026-09-24")
+        assert "frame" in key, "Cache key must contain 'frame' segment when frame_id is provided."
+        assert "2026-09-24" in key, "Cache key must embed the frame_id date value."
+
+
+# ---------------------------------------------------------------------------
+# TC-002 / TC-004 (v1.9): Frames endpoint SQL contract — GROUP BY and index filter
+# ---------------------------------------------------------------------------
+
+class TestFramesEndpointSqlContract:
+    def test_frames_sql_has_group_by(self):
+        """TC-004: Frame list SQL must use GROUP BY, not DISTINCT with aggregates."""
+        path = _REPO_ROOT / "backend" / "app" / "api" / "raster.py"
+        src = path.read_text(encoding="utf-8")
+        assert "GROUP BY sd.acquisition_date" in src, (
+            "Frame list SQL missing GROUP BY sd.acquisition_date. "
+            "Aggregate functions (MIN, AVG) require GROUP BY, not DISTINCT."
+        )
+
+    def test_frames_sql_has_index_is_not_null_filter(self):
+        """TC-004: Frame list SQL must filter by index IS NOT NULL to exclude incompatible sensors."""
+        path = _REPO_ROOT / "backend" / "app" / "api" / "raster.py"
+        src = path.read_text(encoding="utf-8")
+        assert "IS NOT NULL" in src, (
+            "Frame list SQL missing IS NOT NULL filter. "
+            "Landsat-only dates must not appear in Sentinel-only index frame lists (e.g. NDRE)."
+        )
+
+    def test_frames_endpoint_is_premium_only(self):
+        """TC-011: /api/raster/frames must reject non-premium users."""
+        path = _REPO_ROOT / "backend" / "app" / "api" / "raster.py"
+        src = path.read_text(encoding="utf-8")
+        assert "timelapse_enabled" in src, (
+            "Frames endpoint must check timelapse_enabled from DB subscription."
+        )
+        assert "Premium feature" in src or "premium" in src.lower(), (
+            "Frames endpoint must gate on Premium tier."
+        )
+
+    def test_frame_id_param_in_metadata_endpoint(self):
+        """TC-002: metadata endpoint must accept frame_id as an ISO date parameter."""
+        path = _REPO_ROOT / "backend" / "app" / "api" / "raster.py"
+        src = path.read_text(encoding="utf-8")
+        assert "frame_id" in src, "metadata endpoint must accept frame_id parameter."
+        assert "fromisoformat" in src, "frame_id must be parsed as an ISO date."
+
+    def test_frame_id_exclusive_end_conversion(self):
+        """TC-002: frame_id must be converted to date_end = frame_date + 1 day for GEE exclusive end."""
+        path = _REPO_ROOT / "backend" / "app" / "api" / "raster.py"
+        src = path.read_text(encoding="utf-8")
+        assert "timedelta(days=1)" in src, (
+            "frame_id conversion to date_end must add 1 day (GEE filterDate end is exclusive)."
+        )
