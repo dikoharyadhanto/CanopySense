@@ -1,0 +1,67 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [109.0010, 0.1010],
+          [109.0020, 0.1010],
+          [109.0020, 0.1020],
+          [109.0010, 0.1020],
+          [109.0010, 0.1010]
+        ]]
+      },
+      "properties": {
+        "block_name": "Block Alpha 1",
+        "block_code": "SMPL-BLK-001",
+        "afdeling_name": "Afdeling Alpha",
+        "afdeling_code": "SMPL-AFD-A",
+        "plant_year": 2015,
+        "clone_type": "DxP Simalungun"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [109.0020, 0.1010],
+          [109.0030, 0.1010],
+          [109.0030, 0.1020],
+          [109.0020, 0.1020],
+          [109.0020, 0.1010]
+        ]]
+      },
+      "properties": {
+        "block_name": "Block Alpha 2",
+        "block_code": "SMPL-BLK-002",
+        "afdeling_name": "Afdeling Alpha",
+        "afdeling_code": "SMPL-AFD-A",
+        "plant_year": 2016,
+        "clone_type": "DxP Simalungun"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [109.0010, 0.0990],
+          [109.0020, 0.0990],
+          [109.0020, 0.1000],
+          [109.0010, 0.1000],
+          [109.0010, 0.0990]
+        ]]
+      },
+      "properties": {
+        "block_name": "Block Beta 1",
+        "block_code": "SMPL-BLK-003",
+        "afdeling_name": "Afdeling Beta",
+        "afdeling_code": "SMPL-AFD-B",
+        "plant_year": 2018
+      }
+    }
+  ]
+}

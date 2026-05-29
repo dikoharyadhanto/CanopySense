@@ -13,6 +13,10 @@ const PIPELINE_NAV = [
   { to: '/admin/pipeline/schedules', label: 'Schedules',      end: false },
 ];
 
+const DATA_NAV = [
+  { to: '/admin/estate-onboarding', label: 'Estate Onboarding', end: false },
+];
+
 const SUPER_ADMIN_NAV = [
   { to: '/admin/users',          label: 'Admin Users',      end: false },
 ];
@@ -90,6 +94,28 @@ export default function AdminLayout() {
             </div>
           </div>
           {PIPELINE_NAV.map(({ to, label, end }) => (
+            <NavLink
+              key={label}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                  isActive
+                    ? 'bg-indigo-700/60 text-white font-semibold border-l-2 border-indigo-400'
+                    : 'text-slate-300/80 hover:bg-white/10 hover:text-white'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+
+          <div className="pt-4 pb-1 px-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400/60">
+              Data
+            </div>
+          </div>
+          {DATA_NAV.map(({ to, label, end }) => (
             <NavLink
               key={label}
               to={to}

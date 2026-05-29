@@ -286,3 +286,116 @@ export const updatePipelineSchedule = (
   api
     .patch<{ id: number; status: string }>(`/api/admin/pipeline/schedules/${scheduleId}`, body)
     .then((r) => r.data);
+
+// ---- Estate Onboarding ----
+
+export interface EstateStub {
+  id: number;
+  name: string;
+  code: string;
+  company_id: number;
+  is_draft: boolean;
+  created_at: string;
+  afdeling_count: number;
+  block_count: number;
+}
+
+export interface EstateDetail extends EstateStub {
+  company_name: string;
+  afdelings: Array<{
+    id: number;
+    name: string | null;
+    code: string | null;
+    block_count: number;
+  }>;
+  blocks_sample: Array<{
+    id: number;
+    name: string | null;
+    code: string | null;
+    plant_year: number | null;
+    clone_type: string | null;
+    afdeling_code: string | null;
+  }>;
+}
+
+export interface ImportPreviewResult {
+  commit_eligible: boolean;
+  file_error: string | null;
+  valid_blocks: Array<{
+    index: number;
+    block_code: string;
+    block_name: string;
+    afdeling_code: string;
+    afdeling_name: string;
+    plant_year: number | null;
+    clone_type: string | null;
+  }>;
+  invalid_rows: Array<{
+    index: number;
+    block_code: string | null;
+    reason: string;
+  }>;
+  afdeling_count: number;
+  warnings: string[];
+}
+
+export interface ImportCommitResult {
+  estate_id: number;
+  afdelings_created: number;
+  blocks_created: number;
+}
+
+export const listOnboardingEstates = (companyId: number) =>
+  api
+    .get<{ items: EstateStub[] }>(
+      `/api/admin/estate-onboarding/companies/${companyId}/estates`,
+    )
+    .then((r) => r.data.items);
+
+export const createOnboardingEstate = (
+  companyId: number,
+  body: { name: string; code: string },
+) =>
+  api
+    .post<EstateStub>(
+      `/api/admin/estate-onboarding/companies/${companyId}/estates`,
+      body,
+    )
+    .then((r) => r.data);
+
+export const getOnboardingEstateDetail = (estateId: number) =>
+  api
+    .get<EstateDetail>(`/api/admin/estate-onboarding/estates/${estateId}`)
+    .then((r) => r.data);
+
+export const editOnboardingEstate = (
+  estateId: number,
+  body: { name?: string; code?: string },
+) =>
+  api
+    .patch<EstateStub>(`/api/admin/estate-onboarding/estates/${estateId}`, body)
+    .then((r) => r.data);
+
+export const previewImport = (estateId: number, file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api
+    .post<ImportPreviewResult>(
+      `/api/admin/estate-onboarding/estates/${estateId}/import/preview`,
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    .then((r) => r.data);
+};
+
+export const commitImport = (estateId: number, file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api
+    .post<ImportCommitResult>(
+      `/api/admin/estate-onboarding/estates/${estateId}/import/commit`,
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    .then((r) => r.data);
+};
