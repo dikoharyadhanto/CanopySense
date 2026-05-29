@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { getMe, UserContext } from '../lib/adminApi';
 import { getStoredUser, clearToken } from '../lib/auth';
 
 const ADMIN_NAV = [
@@ -18,7 +20,8 @@ const DATA_NAV = [
 ];
 
 const SUPER_ADMIN_NAV = [
-  { to: '/admin/users',          label: 'Admin Users',      end: false },
+  { to: '/admin/users',        label: 'Admin Users',  end: false },
+  { to: '/admin/data-viewer',  label: 'Data Viewer',  end: false },
 ];
 
 function Initials({ name }: { name: string }) {
@@ -38,6 +41,11 @@ function Initials({ name }: { name: string }) {
 export default function AdminLayout() {
   const navigate = useNavigate();
   const user = getStoredUser();
+  const [me, setMe] = useState<UserContext | null>(null);
+
+  useEffect(() => {
+    getMe().then(setMe).catch(() => {});
+  }, []);
 
   function handleLogout() {
     clearToken();
@@ -132,27 +140,31 @@ export default function AdminLayout() {
             </NavLink>
           ))}
 
-          <div className="pt-4 pb-1 px-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400/60">
-              Super Admin
-            </div>
-          </div>
-          {SUPER_ADMIN_NAV.map(({ to, label, end }) => (
-            <NavLink
-              key={label}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-                  isActive
-                    ? 'bg-indigo-700/60 text-white font-semibold border-l-2 border-indigo-400'
-                    : 'text-slate-300/80 hover:bg-white/10 hover:text-white'
-                }`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+          {me?.is_global_admin && (
+            <>
+              <div className="pt-4 pb-1 px-3">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400/60">
+                  Super Admin
+                </div>
+              </div>
+              {SUPER_ADMIN_NAV.map(({ to, label, end }) => (
+                <NavLink
+                  key={label}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                      isActive
+                        ? 'bg-indigo-700/60 text-white font-semibold border-l-2 border-indigo-400'
+                        : 'text-slate-300/80 hover:bg-white/10 hover:text-white'
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </>
+          )}
 
           <div className="pt-4 pb-1 px-3">
             <NavLink

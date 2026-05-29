@@ -399,3 +399,59 @@ export const commitImport = (estateId: number, file: File) => {
     )
     .then((r) => r.data);
 };
+
+// ---- Data Viewer (super-admin only) ----
+
+export interface DataViewerTable {
+  id: string;
+  display: string;
+  schema: string;
+  table: string;
+}
+
+export interface DataViewerColumnInfo {
+  name: string;
+  is_geometry: boolean;
+  is_json_summary: boolean;
+}
+
+export interface DataViewerColumnMeta {
+  table_id: string;
+  display: string;
+  search_col: string | null;
+  sort_allowed: string[];
+  columns: DataViewerColumnInfo[];
+}
+
+export interface DataViewerRowsResponse {
+  table_id: string;
+  display: string;
+  total: number;
+  page: number;
+  page_size: number;
+  columns: string[];
+  rows: Record<string, unknown>[];
+}
+
+export const getDataViewerCatalog = () =>
+  api.get<{ tables: DataViewerTable[] }>('/api/admin/data-viewer/catalog').then((r) => r.data);
+
+export const getDataViewerColumns = (tableId: string) =>
+  api
+    .get<DataViewerColumnMeta>(`/api/admin/data-viewer/${tableId}/columns`)
+    .then((r) => r.data);
+
+export const getDataViewerRows = (
+  tableId: string,
+  params: {
+    page?: number;
+    page_size?: number;
+    sort_col?: string;
+    sort_dir?: string;
+    filter_col?: string;
+    filter_val?: string;
+  },
+) =>
+  api
+    .get<DataViewerRowsResponse>(`/api/admin/data-viewer/${tableId}/rows`, { params })
+    .then((r) => r.data);

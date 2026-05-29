@@ -20,6 +20,8 @@ import PipelineTrigger from './pages/admin/PipelineTrigger';
 import PipelineRunHistory from './pages/admin/PipelineRunHistory';
 import PipelineSchedules from './pages/admin/PipelineSchedules';
 import EstateOnboarding from './pages/admin/EstateOnboarding';
+import DataViewer from './pages/admin/DataViewer';
+import SuperAdminRoute from './components/SuperAdminRoute';
 
 function App() {
   return (
@@ -52,6 +54,9 @@ function App() {
             <Route path="/admin/pipeline/history" element={<PipelineRunHistory />} />
             <Route path="/admin/pipeline/schedules" element={<PipelineSchedules />} />
             <Route path="/admin/estate-onboarding" element={<EstateOnboarding />} />
+            <Route element={<SuperAdminRoute />}>
+              <Route path="/admin/data-viewer" element={<DataViewer />} />
+            </Route>
           </Route>
         </Route>
 
