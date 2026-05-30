@@ -7,6 +7,10 @@ const PHASE1_NAV = [
   { to: '/timeseries',   label: 'Time-Series Analyzer' },
 ];
 
+const MANAGER_NAV = [
+  { to: '/settings/members', label: 'Kelola Anggota' },
+];
+
 const PHASE2_NAV = [
   'Long-Term Trends',
   'Model Studio',
@@ -98,6 +102,32 @@ export default function Layout() {
               </span>
             </NavLink>
           ))}
+
+          {/* Manager-only nav */}
+          {user?.role === 'manager' && (
+            <>
+              <div className="pt-4 pb-1 px-3">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-green-400/50">
+                  Pengaturan
+                </div>
+              </div>
+              {MANAGER_NAV.map(({ to, label }) => (
+                <NavLink
+                  key={label}
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                      isActive
+                        ? 'bg-green-700/60 text-white font-semibold border-l-2 border-[#19C853]'
+                        : 'text-green-100/80 hover:bg-white/10 hover:text-white'
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         {/* User context */}
@@ -113,12 +143,20 @@ export default function Layout() {
               </div>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-[11px] text-red-300/70 hover:text-red-300 transition-colors"
-          >
-            Logout
-          </button>
+          <div className="flex gap-3 items-center">
+            <NavLink
+              to="/profile"
+              className="text-[11px] text-green-300/70 hover:text-green-300 transition-colors underline"
+            >
+              Profil
+            </NavLink>
+            <button
+              onClick={handleLogout}
+              className="text-[11px] text-red-300/70 hover:text-red-300 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </aside>
 

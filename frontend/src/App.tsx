@@ -5,6 +5,12 @@ import ExploreMap from './pages/ExploreMap';
 import TimeSeries from './pages/TimeSeries';
 import Unavailable from './pages/Unavailable';
 import SetupAccount from './pages/SetupAccount';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import AcceptInvite from './pages/AcceptInvite';
+import EmptyState from './pages/EmptyState';
+import Profile from './pages/Profile';
+import Members from './pages/settings/Members';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import AdminRoute from './components/AdminRoute';
@@ -29,6 +35,10 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/setup" element={<SetupAccount />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
+        <Route path="/empty-state" element={<EmptyState />} />
 
         {/* Manager product surfaces */}
         <Route element={<PrivateRoute />}>
@@ -37,6 +47,8 @@ function App() {
             <Route path="/explore-map" element={<ExploreMap />} />
             <Route path="/timeseries" element={<TimeSeries />} />
             <Route path="/unavailable" element={<Unavailable />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings/members" element={<Members />} />
           </Route>
         </Route>
 

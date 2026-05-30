@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB
     # Environment guard — set to "production" to block staging_reset.py
     ENVIRONMENT: str = "development"
+    FRONTEND_URL: str = "http://localhost:3000"
 
     class Config:
         env_file = ".env"

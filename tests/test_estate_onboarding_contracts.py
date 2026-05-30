@@ -71,6 +71,8 @@ def _load(dotted: str) -> types.ModuleType:
     if "app.auth.jwt" not in sys.modules:
         jwt_stub = types.ModuleType("app.auth.jwt")
         jwt_stub.decode_access_token = lambda t: {"sub": "test"}  # type: ignore[attr-defined]
+        jwt_stub.get_password_hash = lambda p: "hashed"  # type: ignore[attr-defined]
+        jwt_stub.verify_password = lambda p, h: True  # type: ignore[attr-defined]
         sys.modules["app.auth.jwt"] = jwt_stub
 
     mod = importlib.util.module_from_spec(spec)
@@ -518,3 +520,95 @@ class TestSampleFixturePhase1:
         assert len(result.valid_features) == 3
         assert len(result.invalid_rows) == 0
         assert result.commit_eligible is True
+
+
+# ===========================================================================
+# TC-001 through TC-005: /import/parse endpoint (Stage 1.15)
+# ===========================================================================
+
+class TestImportParseEndpoint:
+    """Structural contract tests for POST /estates/{id}/import/parse."""
+
+    @pytest.fixture(autouse=True)
+    def _import_mod(self):
+        self.mod = _load("app.api.admin.estate_onboarding")
+
+    # TC-001: /import/parse route is registered
+    def test_parse_route_registered(self):
+        routes = {r.path for r in self.mod.router.routes}
+        assert "/estates/{estate_id}/import/parse" in routes, (
+            "/import/parse route not found in router"
+        )
+
+    # TC-001: parse endpoint is an async coroutine function
+    def test_parse_endpoint_is_async(self):
+        route = next(
+            r for r in self.mod.router.routes
+            if getattr(r, "path", None) == "/estates/{estate_id}/import/parse"
+        )
+        assert inspect.iscoroutinefunction(route.endpoint), (
+            "import_parse must be an async function"
+        )
+
+    # TC-001: response shape includes 'features' and 'warnings' keys
+    def test_parse_response_shape_contains_features_and_warnings(self):
+        src = inspect.getsource(self.mod.import_parse)
+        assert '"features"' in src or "'features'" in src, (
+            "import_parse response must include 'features' key"
+        )
+        assert '"warnings"' in src or "'warnings'" in src, (
+            "import_parse response must include 'warnings' key"
+        )
+
+    # TC-002: parse returns empty features list on file_error path
+    def test_parse_returns_empty_features_on_file_error(self):
+        src = inspect.getsource(self.mod.import_parse)
+        assert '"features": []' in src or "'features': []" in src, (
+            "import_parse must return empty features list on file_error"
+        )
+
+    # TC-003: parse uses same file-size limit as preview (MAX_UPLOAD_SIZE_BYTES)
+    def test_parse_enforces_file_size_limit(self):
+        src = inspect.getsource(self.mod.import_parse)
+        assert "MAX_UPLOAD_SIZE_BYTES" in src, (
+            "import_parse must enforce MAX_UPLOAD_SIZE_BYTES"
+        )
+
+    # TC-003: parse uses same conversion path (convert_to_geojson_bytes) as preview
+    def test_parse_uses_convert_to_geojson_bytes(self):
+        src = inspect.getsource(self.mod.import_parse)
+        assert "convert_to_geojson_bytes" in src, (
+            "import_parse must call convert_to_geojson_bytes for ZIP/KML/KMZ conversion"
+        )
+
+    # TC-004: parse endpoint requires get_current_admin (admin-only)
+    def test_parse_enforces_admin_auth(self):
+        # get_current_admin is declared via Depends() in the function signature,
+        # not as a route-level dependency. Check source for its presence.
+        src = inspect.getsource(self.mod.import_parse)
+        assert "get_current_admin" in src, (
+            "import_parse must use get_current_admin dependency"
+        )
+
+    # TC-005: /import/preview response shape is unchanged (no new fields injected)
+    def test_preview_response_shape_unchanged(self):
+        route = next(
+            r for r in self.mod.router.routes
+            if getattr(r, "path", None) == "/estates/{estate_id}/import/preview"
+        )
+        src = inspect.getsource(route.endpoint)
+        for field in (
+            "commit_eligible", "file_error", "valid_blocks",
+            "invalid_rows", "afdeling_count", "warnings"
+        ):
+            assert f'"{field}"' in src or f"'{field}'" in src, (
+                f"import_preview response must still contain field: {field!r}"
+            )
+
+    # TC-005: /import/parse is a separate function from /import/preview
+    def test_parse_is_separate_from_preview(self):
+        assert hasattr(self.mod, "import_parse"), "import_parse must be defined"
+        assert hasattr(self.mod, "import_preview"), "import_preview must still be defined"
+        assert self.mod.import_parse is not self.mod.import_preview, (
+            "import_parse and import_preview must be separate functions"
+        )

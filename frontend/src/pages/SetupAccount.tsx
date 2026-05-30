@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-
-const PASSWORD_RE = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9!@#$%^&*()\-_=+\[\]{};:'",.<>/?\\|`~]).{12,}$/;
+import { PASSWORD_RE, PASSWORD_HINT } from '../lib/passwordPolicy';
 
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -145,9 +144,7 @@ export default function SetupAccount() {
                 <EyeIcon open={showPassword} />
               </button>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Min. 12 karakter · huruf besar · huruf kecil · angka atau simbol
-            </p>
+            <p className="text-xs text-slate-400 mt-1">{PASSWORD_HINT}</p>
           </div>
           <div>
             <label className="block text-sm text-slate-600 mb-1">Confirm Password</label>

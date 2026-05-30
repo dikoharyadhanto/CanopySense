@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../lib/api';
 import { getMe } from '../lib/adminApi';
 
@@ -166,6 +166,11 @@ export default function Login() {
                 >
                   {loading ? 'Memproses...' : 'Masuk'}
                 </button>
+                <div className="text-center">
+                  <Link to="/forgot-password" className="text-sm text-slate-500 hover:text-slate-700 underline">
+                    Lupa password?
+                  </Link>
+                </div>
               </form>
             </>
           ) : (
