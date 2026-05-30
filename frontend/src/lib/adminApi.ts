@@ -119,6 +119,16 @@ export const createManager = (body: { email: string; company_id: number }) =>
 export const updateManagerStatus = (userId: number, is_active: boolean) =>
   api.patch(`/api/admin/managers/${userId}/status`, { is_active }).then((r) => r.data);
 
+export const resendManagerSetupToken = (userId: number) =>
+  api
+    .post<{ setup_token: string; setup_token_expires_at: string; note: string }>(
+      `/api/admin/managers/${userId}/resend-setup`,
+    )
+    .then((r) => r.data);
+
+export const deletePendingManager = (userId: number) =>
+  api.delete<{ user_id: number; deleted: boolean }>(`/api/admin/managers/${userId}`).then((r) => r.data);
+
 // ---- Subscriptions ----
 
 export const getSubscription = (companyId: number) =>

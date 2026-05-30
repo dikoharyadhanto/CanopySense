@@ -10,12 +10,15 @@ class Settings(BaseSettings):
     PGHOST: str = "localhost"
     PGPORT: int = 5432
     PGUSER: str = "postgres"
-    PGPASSWORD: str = "postgres"
+    PGPASSWORD: str = ""
     PGDATABASE: str = "canopysense"
-    SECRET_KEY: str = "super_secret_key_change_me_in_production"
+    # No default — startup validation in main.py rejects weak/empty values in non-test environments
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week
+    # Reduced from 1 week (10080) to 60 min (GAP-06)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_PASSWORD: str = ""
     # Raster cache TTL in seconds. Default 43200 (12h) — referenced from GEE
     # getMapId() ~48h empirical window. Configurable; not a product guarantee.
     RASTER_CACHE_TTL_SECONDS: int = 43200
@@ -26,6 +29,19 @@ class Settings(BaseSettings):
     FUNCTION_TIMEOUT_SECONDS: int = 120
     PGSCHEMA: str = "canopysense"
     PATCHER_API_VERSION: str = "1.1"
+    # CORS allowlist — comma-separated origins, no wildcard (GAP-01)
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    # Email OTP settings (Phase E — new device detection)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
+    DEVICE_TOKEN_EXPIRE_DAYS: int = 90
+    # Upload size limit in bytes — enforced before file.read() to prevent DoS
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB
+    # Environment guard — set to "production" to block staging_reset.py
+    ENVIRONMENT: str = "development"
 
     class Config:
         env_file = ".env"

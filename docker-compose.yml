@@ -2,20 +2,31 @@ services:
   db:
     image: postgis/postgis:16-3.4
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: canopysense
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_DB: ${PGDATABASE:-canopysense}
+    # No host port binding — accessible within canopy_internal network only (GAP-03)
+    networks:
+      - canopy_internal
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
       - ./database/seed.sql:/docker-entrypoint-initdb.d/2_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres} -d ${PGDATABASE:-canopysense}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    # --requirepass only applied when REDIS_PASSWORD is set (GAP-04)
+    command: sh -c "redis-server $${REDIS_PASSWORD:+--requirepass $$REDIS_PASSWORD}"
+    # No host port binding — accessible within canopy_internal network only (GAP-03)
+    networks:
+      - canopy_internal
 
   api:
     build:
@@ -25,20 +36,35 @@ services:
     volumes:
       - ./backend:/app
       - ./src:/app/src
+      - ./scripts:/app/scripts
     ports:
       - "8000:8000"
     environment:
       - PGHOST=db
-      - PGUSER=postgres
-      - PGPASSWORD=postgres
-      - PGDATABASE=canopysense
-      - REDIS_URL=redis://redis:6379/0
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGDATABASE=${PGDATABASE:-canopysense}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
       - CLOUD_FUNCTION_URL=${CLOUD_FUNCTION_URL:-}
       - PATCHER_API_KEY=${PATCHER_API_KEY:-}
       - PATCHER_LOCAL_PATH=/app/src/patcher_local.py
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - EMAIL_FROM=${EMAIL_FROM:-}
+      - DEVICE_TOKEN_EXPIRE_DAYS=${DEVICE_TOKEN_EXPIRE_DAYS:-90}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - canopy_internal
 
   celery_worker:
     build:
@@ -50,13 +76,20 @@ services:
       - ./src:/app/src
     environment:
       - PGHOST=db
-      - PGUSER=postgres
-      - PGPASSWORD=postgres
-      - PGDATABASE=canopysense
-      - REDIS_URL=redis://redis:6379/0
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGDATABASE=${PGDATABASE:-canopysense}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - canopy_internal
 
   frontend:
     build:
@@ -71,19 +104,12 @@ services:
       - VITE_API_URL=http://localhost:8000
     depends_on:
       - api
+    networks:
+      - canopy_internal
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    ports:
-      - "5050:80"
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - db
+networks:
+  canopy_internal:
+    driver: bridge
 
 volumes:
   postgres_data:
-  pgadmin_data:

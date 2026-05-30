@@ -1,6 +1,9 @@
 archieve/
 Sigma/
 
+# Local credentials — never commit (Stage 1.14 security hardening)
+secret/
+
 # Credentials — never commit
 **/gee_key.json
 **/*service_account*.json

@@ -1,4 +1,73 @@
 import { useState, useRef } from 'react';
+
+const BLOCK_IMPORT_TEMPLATE = JSON.stringify(
+  {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[107.619, -6.917], [107.629, -6.917], [107.629, -6.927], [107.619, -6.927], [107.619, -6.917]]],
+        },
+        properties: { block_code: 'BLK-001', block_name: 'Blok Utara 1', afdeling_code: 'AFD-A', afdeling_name: 'Afdeling A', plant_year: 2015, clone_type: 'DxP Yangambi' },
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[107.629, -6.917], [107.639, -6.917], [107.639, -6.927], [107.629, -6.927], [107.629, -6.917]]],
+        },
+        properties: { block_code: 'BLK-002', block_name: 'Blok Utara 2', afdeling_code: 'AFD-A', afdeling_name: 'Afdeling A', plant_year: 2018, clone_type: 'DxP Sungei Pancur' },
+      },
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[107.619, -6.927], [107.629, -6.927], [107.629, -6.937], [107.619, -6.937], [107.619, -6.927]]],
+        },
+        properties: { block_code: 'BLK-003', block_name: 'Blok Selatan 1', afdeling_code: 'AFD-B', afdeling_name: 'Afdeling B', plant_year: 2020, clone_type: null },
+      },
+    ],
+  },
+  null,
+  2,
+);
+
+function downloadTemplate() {
+  const blob = new Blob([BLOCK_IMPORT_TEMPLATE], { type: 'application/geo+json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'block_import_template.geojson';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+const REQUIRED_PROPS = ['block_code', 'block_name', 'afdeling_code', 'afdeling_name'] as const;
+
+const STOP_WORDS = new Set(['dan', 'atau', 'the', 'and', 'or', 'of', 'di', 'ke', 'dari', 'untuk', 'a', 'an', 'by', 'at']);
+
+function generateEstateCode(name: string, existingCodes: string[]): string {
+  const words = name
+    .trim()
+    .split(/[\s\-_,./\\]+/)
+    .filter((w) => w.length > 0 && !STOP_WORDS.has(w.toLowerCase()));
+
+  if (words.length === 0) return '';
+
+  const segments = words.slice(0, 2).map((w) => w.slice(0, 3).toUpperCase());
+  const prefix = segments.join('-');
+  const existing = new Set(existingCodes.map((c) => c.toUpperCase()));
+
+  for (let n = 1; n <= 999; n++) {
+    const candidate = `${prefix}-${String(n).padStart(3, '0')}`;
+    if (!existing.has(candidate)) return candidate;
+  }
+  return `${prefix}-001`;
+}
 import {
   listCompanies,
   listOnboardingEstates,
@@ -13,7 +82,7 @@ import {
   ImportPreviewResult,
 } from '../../lib/adminApi';
 
-type Step = 'company' | 'estate' | 'upload' | 'preview' | 'commit';
+type Step = 'company' | 'estate' | 'upload' | 'mapping' | 'preview' | 'commit';
 
 export default function EstateOnboarding() {
   const [step, setStep] = useState<Step>('company');
@@ -43,6 +112,13 @@ export default function EstateOnboarding() {
   const [editCode, setEditCode] = useState('');
   const [editError, setEditError] = useState('');
   const [editLoading, setEditLoading] = useState(false);
+
+  const codeManuallyEdited = useRef(false);
+
+  // Column mapper (P2)
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [mappingError, setMappingError] = useState('');
 
   // File upload + preview
   const fileRef = useRef<HTMLInputElement>(null);
@@ -156,6 +232,101 @@ export default function EstateOnboarding() {
       setEditError(typeof msg === 'string' ? msg : 'Failed to update estate.');
     } finally {
       setEditLoading(false);
+    }
+  }
+
+  // ── Step 3: File select + column detection ─────────────────────────────
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setSelectedFile(file);
+    setPreviewResult(null);
+    setPreviewError('');
+    setDetectedColumns([]);
+    setColumnMapping({});
+    setMappingError('');
+    if (!file) return;
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith('.geojson') || lower.endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target?.result as string);
+          if (parsed?.type === 'FeatureCollection' && Array.isArray(parsed.features) && parsed.features.length > 0) {
+            setDetectedColumns(Object.keys(parsed.features[0]?.properties ?? {}));
+          }
+        } catch {
+          // JSON error caught by backend
+        }
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  function handlePreviewOrMap() {
+    if (!selectedFile || !selectedEstate) return;
+    const lower = selectedFile.name.toLowerCase();
+    const isGeoJSON = lower.endsWith('.geojson') || lower.endsWith('.json');
+    if (isGeoJSON && detectedColumns.length > 0) {
+      const missing = REQUIRED_PROPS.filter((p) => !detectedColumns.includes(p));
+      if (missing.length > 0) {
+        const norm = (s: string) => s.toLowerCase().replace(/[_\s-]/g, '');
+        const initMap: Record<string, string> = {};
+        for (const req of REQUIRED_PROPS) {
+          initMap[req] = detectedColumns.find((c) => norm(c) === norm(req)) ?? '';
+        }
+        setColumnMapping(initMap);
+        setMappingError('');
+        setStep('mapping');
+        return;
+      }
+    }
+    handlePreview();
+  }
+
+  async function handleApplyMapping() {
+    if (!selectedFile || !selectedEstate) return;
+    const unresolved = REQUIRED_PROPS.filter((p) => !columnMapping[p]);
+    if (unresolved.length > 0) {
+      setMappingError(`Kolom berikut belum dipetakan: ${unresolved.join(', ')}`);
+      return;
+    }
+    setPreviewLoading(true);
+    setPreviewError('');
+    setMappingError('');
+    try {
+      const text = await selectedFile.text();
+      const original = JSON.parse(text) as {
+        type: string;
+        features: Array<{ properties: Record<string, unknown>; [k: string]: unknown }>;
+        [k: string]: unknown;
+      };
+      const mappedSources = new Set(Object.values(columnMapping));
+      const transformed = {
+        ...original,
+        features: original.features.map((feat) => {
+          const newProps: Record<string, unknown> = {};
+          for (const [req, src] of Object.entries(columnMapping)) newProps[req] = feat.properties[src];
+          for (const [k, v] of Object.entries(feat.properties)) {
+            if (!mappedSources.has(k)) newProps[k] = v;
+          }
+          return { ...feat, properties: newProps };
+        }),
+      };
+      const transformedFile = new File(
+        [JSON.stringify(transformed)],
+        selectedFile.name.replace(/\.[^.]+$/, '') + '_mapped.geojson',
+        { type: 'application/geo+json' },
+      );
+      const result = await previewImport(selectedEstate.id, transformedFile);
+      setSelectedFile(transformedFile);
+      setPreviewResult(result);
+      setStep('preview');
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setPreviewError(typeof detail === 'string' ? detail : 'Preview gagal setelah pemetaan kolom.');
+      setStep('upload');
+    } finally {
+      setPreviewLoading(false);
     }
   }
 
@@ -295,7 +466,7 @@ export default function EstateOnboarding() {
                 Estates — {selectedCompany.company_name}
               </h2>
               <button
-                onClick={() => { setShowCreateForm(true); setCreateError(''); setNewName(''); setNewCode(''); }}
+                onClick={() => { setShowCreateForm(true); setCreateError(''); setNewName(''); setNewCode(''); codeManuallyEdited.current = false; }}
                 className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700"
               >
                 + New estate
@@ -310,17 +481,31 @@ export default function EstateOnboarding() {
                     <label className="block text-xs text-slate-500 mb-1">Estate name</label>
                     <input
                       value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewName(val);
+                        if (!codeManuallyEdited.current) {
+                          setNewCode(generateEstateCode(val, estates.map((es) => es.code)));
+                        }
+                      }}
                       placeholder="e.g. Sumbawa Estate"
                       className="w-full text-sm border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-indigo-400"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Estate code (max 20 chars)</label>
+                    <label className="block text-xs text-slate-500 mb-1">
+                      Estate code
+                      {!codeManuallyEdited.current && newCode && (
+                        <span className="ml-1.5 text-indigo-400 font-normal">· auto-generated</span>
+                      )}
+                    </label>
                     <input
                       value={newCode}
-                      onChange={(e) => setNewCode(e.target.value.toUpperCase())}
-                      placeholder="e.g. SMB-EST-01"
+                      onChange={(e) => {
+                        codeManuallyEdited.current = true;
+                        setNewCode(e.target.value.toUpperCase());
+                      }}
+                      placeholder="e.g. SMB-EST-001"
                       maxLength={20}
                       className="w-full text-sm border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-indigo-400 font-mono"
                     />
@@ -463,22 +648,29 @@ export default function EstateOnboarding() {
 
             {/* File upload */}
             <div className="bg-white border border-slate-200 rounded-lg p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Upload block boundaries</h3>
-              <p className="text-xs text-slate-500 mb-4">
-                GeoJSON FeatureCollection of Polygon features. Each feature must include
-                block_code, block_name, afdeling_code, afdeling_name properties.
-                Max 10 MB.
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-slate-700">Upload block boundaries</h3>
+                <button
+                  onClick={downloadTemplate}
+                  className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                >
+                  ↓ Unduh Template
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mb-1">
+                GeoJSON FeatureCollection (Polygon), Shapefile (.zip), KML, atau KMZ.
+                Properti wajib: block_code, block_name, afdeling_code, afdeling_name. Max 10 MB.
+              </p>
+              <p className="text-xs text-slate-400 mb-4">
+                Jika nama kolom tidak sesuai, Anda akan diarahkan ke langkah pemetaan kolom secara otomatis.
+                File Shapefile/KML akan direproject ke WGS84 dan MultiPolygon di-explode ke Polygon secara otomatis.
               </p>
 
               <input
                 ref={fileRef}
                 type="file"
-                accept=".geojson,.json"
-                onChange={(e) => {
-                  setSelectedFile(e.target.files?.[0] ?? null);
-                  setPreviewResult(null);
-                  setPreviewError('');
-                }}
+                accept=".geojson,.json,.zip,.kml,.kmz"
+                onChange={handleFileChange}
                 className="block text-sm text-slate-600 mb-4
                   file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0
                   file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700
@@ -492,11 +684,62 @@ export default function EstateOnboarding() {
               )}
 
               <button
-                onClick={handlePreview}
+                onClick={handlePreviewOrMap}
                 disabled={!selectedFile || previewLoading}
                 className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
               >
                 {previewLoading ? 'Validating…' : 'Validate & preview'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step: mapping ─────────────────────────────────────────── */}
+        {step === 'mapping' && selectedFile && (
+          <div className="bg-white border border-slate-200 rounded-lg p-6">
+            <h2 className="text-sm font-semibold text-slate-700 mb-1">Pemetaan Kolom</h2>
+            <p className="text-xs text-slate-500 mb-1">
+              Kolom yang diperlukan tidak ditemukan di file Anda. Pilih kolom yang berisi setiap data berikut.
+            </p>
+            <p className="text-xs text-slate-400 mb-5">
+              File: <span className="font-mono">{selectedFile.name}</span> ·{' '}
+              Kolom terdeteksi: {detectedColumns.join(', ') || '—'}
+            </p>
+            <div className="space-y-3 mb-5">
+              {REQUIRED_PROPS.map((req) => (
+                <div key={req} className="grid grid-cols-2 gap-3 items-center">
+                  <div className="text-xs font-mono text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
+                    {req} <span className="text-red-500">*</span>
+                  </div>
+                  <select
+                    value={columnMapping[req] ?? ''}
+                    onChange={(e) => setColumnMapping((prev) => ({ ...prev, [req]: e.target.value }))}
+                    className="text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-indigo-400"
+                  >
+                    <option value="">— pilih kolom —</option>
+                    {detectedColumns.map((col) => (
+                      <option key={col} value={col}>{col}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            {mappingError && (
+              <p className="text-xs text-red-600 mb-3">{mappingError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={handleApplyMapping}
+                disabled={previewLoading}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {previewLoading ? 'Memproses…' : 'Terapkan & Validasi'}
+              </button>
+              <button
+                onClick={() => setStep('upload')}
+                className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-md hover:bg-slate-50"
+              >
+                Batal
               </button>
             </div>
           </div>

@@ -2,6 +2,23 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createManager } from '../../lib/adminApi';
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      className="mt-2 px-3 py-1.5 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 rounded transition-colors font-medium"
+    >
+      {copied ? 'Tersalin!' : 'Salin Token'}
+    </button>
+  );
+}
+
 export default function ManagerInvite() {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
@@ -44,6 +61,7 @@ export default function ManagerInvite() {
           <div className="bg-white border border-amber-200 rounded p-3 font-mono text-sm break-all select-all">
             {result.token}
           </div>
+          <CopyButton text={result.token} />
           <button
             onClick={() => navigate(`/admin/companies/${companyId}`)}
             className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"

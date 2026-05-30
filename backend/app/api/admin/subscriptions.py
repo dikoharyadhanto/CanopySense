@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from app.api.deps import get_current_admin
 from app.api.admin.audit_log import log_admin_action
@@ -18,8 +19,8 @@ class SubscriptionUpdate(BaseModel):
     tier: Optional[str] = None
     status: Optional[str] = None
     billing_interval: Optional[str] = None
-    subscription_starts_at: Optional[str] = None
-    subscription_ends_at: Optional[str] = None
+    subscription_starts_at: Optional[date] = None
+    subscription_ends_at: Optional[date] = None
     timelapse_enabled: Optional[bool] = None
     timelapse_period_months: Optional[int] = None
     raster_serving_mode: Optional[str] = None
@@ -77,7 +78,7 @@ async def update_subscription(
         for field in ("subscription_starts_at", "subscription_ends_at"):
             val = getattr(body, field)
             if val is not None:
-                updates.append(f"{field} = ${idx}::TIMESTAMP")
+                updates.append(f"{field} = ${idx}")
                 params.append(val)
                 idx += 1
 
@@ -90,5 +91,5 @@ async def update_subscription(
         row = await conn.fetchrow(sql, *params)
 
         await log_admin_action(conn, admin["id"], "update_subscription", "company", company_id,
-                               body.model_dump(exclude_none=True))
+                               body.model_dump(mode='json', exclude_none=True))
     return dict(row)

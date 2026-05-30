@@ -86,6 +86,81 @@ async def create_manager(
     }
 
 
+@router.post("/{user_id}/resend-setup", status_code=200)
+async def resend_setup_token(
+    user_id: int,
+    admin=Depends(get_current_admin),
+    pool: asyncpg.Pool = Depends(get_db_pool),
+):
+    async with pool.acquire() as conn:
+        user = await conn.fetchrow(
+            """
+            SELECT u.id, u.email, u.setup_required
+            FROM users u
+            JOIN user_company_roles ucr ON u.id = ucr.user_id
+            WHERE u.id = $1 AND ucr.role = 'manager'
+            """,
+            user_id,
+        )
+        if not user:
+            raise HTTPException(status_code=404, detail="Manager not found")
+        if not user["setup_required"]:
+            raise HTTPException(status_code=400, detail="Manager has already completed setup")
+
+        plaintext_token = secrets.token_urlsafe(32)
+        token_hash = get_password_hash(plaintext_token)
+        expires_at = datetime.utcnow() + timedelta(hours=SETUP_TOKEN_TTL_HOURS)
+
+        await conn.execute(
+            """
+            UPDATE users
+            SET setup_token_hash = $1, setup_token_expires_at = $2, updated_at = NOW()
+            WHERE id = $3
+            """,
+            token_hash, expires_at, user_id,
+        )
+        await log_admin_action(conn, admin["id"], "resend_setup_token", "user", user_id,
+                               {"email": user["email"]})
+
+    return {
+        "setup_token": plaintext_token,
+        "setup_token_expires_at": expires_at.isoformat(),
+        "note": "setup_token is shown only once and is not stored in plaintext.",
+    }
+
+
+@router.delete("/{user_id}", status_code=200)
+async def delete_pending_manager(
+    user_id: int,
+    admin=Depends(get_current_admin),
+    pool: asyncpg.Pool = Depends(get_db_pool),
+):
+    async with pool.acquire() as conn:
+        user = await conn.fetchrow(
+            """
+            SELECT u.id, u.email, u.setup_required
+            FROM users u
+            JOIN user_company_roles ucr ON u.id = ucr.user_id
+            WHERE u.id = $1 AND ucr.role = 'manager'
+            """,
+            user_id,
+        )
+        if not user:
+            raise HTTPException(status_code=404, detail="Manager not found")
+        if not user["setup_required"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete a manager who has completed setup. Deactivate instead.",
+            )
+
+        await log_admin_action(conn, admin["id"], "delete_pending_manager", "user", user_id,
+                               {"email": user["email"]})
+        await conn.execute("DELETE FROM user_company_roles WHERE user_id = $1", user_id)
+        await conn.execute("DELETE FROM users WHERE id = $1", user_id)
+
+    return {"user_id": user_id, "deleted": True}
+
+
 @router.patch("/{user_id}/status")
 async def update_manager_status(
     user_id: int,

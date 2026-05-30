@@ -1,12 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCompanyDetail, updateManagerStatus, type CompanyDetail as CompanyDetailData } from '../../lib/adminApi';
+import {
+  getCompanyDetail,
+  updateManagerStatus,
+  resendManagerSetupToken,
+  deletePendingManager,
+  type CompanyDetail as CompanyDetailData,
+} from '../../lib/adminApi';
 
 export default function CompanyDetail() {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<CompanyDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [tokenModal, setTokenModal] = useState<{
+    username: string;
+    token: string;
+    expires: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   function load() {
     if (!companyId) return;
@@ -20,6 +33,34 @@ export default function CompanyDetail() {
   async function handleToggleManager(userId: number, currentActive: boolean) {
     await updateManagerStatus(userId, !currentActive);
     load();
+  }
+
+  async function handleResendToken(userId: number, username: string) {
+    setActionLoading(userId);
+    try {
+      const res = await resendManagerSetupToken(userId);
+      setTokenModal({ username, token: res.setup_token, expires: res.setup_token_expires_at });
+      setCopied(false);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleDeleteManager(userId: number, username: string) {
+    if (!confirm(`Hapus manajer "${username}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setActionLoading(userId);
+    try {
+      await deletePendingManager(userId);
+      load();
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  function handleCopyToken(token: string) {
+    navigator.clipboard.writeText(token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   if (error) return <div className="p-6 text-red-600">{error}</div>;
@@ -90,6 +131,39 @@ export default function CompanyDetail() {
         )}
       </div>
 
+      {/* Setup Token Modal */}
+      {tokenModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <h2 className="text-base font-semibold text-slate-800 mb-1">Setup Token</h2>
+            <p className="text-xs text-slate-500 mb-4">
+              Token baru untuk <span className="font-mono font-medium">{tokenModal.username}</span>.
+              Salin sekarang — token tidak akan ditampilkan lagi.
+            </p>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 font-mono text-xs text-slate-800 break-all mb-2">
+              {tokenModal.token}
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Berlaku hingga: {new Date(tokenModal.expires).toLocaleString('id-ID')}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleCopyToken(tokenModal.token)}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+              >
+                {copied ? 'Tersalin!' : 'Salin Token'}
+              </button>
+              <button
+                onClick={() => setTokenModal(null)}
+                className="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium py-2 rounded-lg transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Managers */}
       <div className="bg-white border border-slate-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
@@ -135,7 +209,27 @@ export default function CompanyDetail() {
                       </span>
                     )}
                   </td>
-                  <td className="py-2">
+                  <td className="py-2 flex items-center gap-2 flex-wrap">
+                    {m.setup_required && (
+                      <>
+                        <button
+                          onClick={() => handleResendToken(m.id, m.username)}
+                          disabled={actionLoading === m.id}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-50 transition-colors"
+                        >
+                          {actionLoading === m.id ? '...' : 'Token'}
+                        </button>
+                        <span className="text-slate-300">·</span>
+                        <button
+                          onClick={() => handleDeleteManager(m.id, m.username)}
+                          disabled={actionLoading === m.id}
+                          className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
+                        >
+                          Remove
+                        </button>
+                        <span className="text-slate-300">·</span>
+                      </>
+                    )}
                     <button
                       onClick={() => handleToggleManager(m.id, m.is_active)}
                       className="text-xs text-slate-500 hover:text-red-600 transition-colors"

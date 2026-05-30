@@ -1,5 +1,6 @@
 """
 spatial_validator.py — Two-phase GeoJSON validation for estate block import.
+Also provides convert_to_geojson_bytes for Shapefile/KML/KMZ input (requires geopandas).
 
 Phase 1 (Python, no DB): file size, JSON parse, FeatureCollection type, CRS
 metadata, feature geometry type, required properties, field lengths,
@@ -259,3 +260,75 @@ async def run_db_duplicate_check(
         return await _check(conn)
     async with pool.acquire() as c:
         return await _check(c)
+
+
+def convert_to_geojson_bytes(file_bytes: bytes, filename: str) -> tuple[bytes, list[str]]:
+    """Convert Shapefile (.zip), KML, or KMZ to GeoJSON bytes for validation.
+
+    Performs auto-reproject to WGS84 and MultiPolygon→Polygon explode with
+    block_code suffixing (-P2, -P3, ...) for exploded parts.
+
+    Returns (geojson_bytes, warnings).
+    Raises ValueError on unrecognised format or read error.
+    Requires geopandas, fiona, pyproj.
+    """
+    import io
+    import zipfile as _zipfile
+
+    try:
+        import geopandas as gpd  # noqa: PLC0415
+    except ImportError as exc:
+        raise ValueError("geopandas is required for Shapefile/KML/KMZ conversion") from exc
+
+    lower = filename.lower()
+    warnings: list[str] = []
+
+    try:
+        if lower.endswith('.zip'):
+            gdf = gpd.read_file(io.BytesIO(file_bytes))
+        elif lower.endswith('.kmz'):
+            with _zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
+                kml_names = [n for n in z.namelist() if n.lower().endswith('.kml')]
+                if not kml_names:
+                    raise ValueError("No .kml file found inside KMZ archive")
+                kml_data = z.read(kml_names[0])
+            gdf = gpd.read_file(io.BytesIO(kml_data), driver='KML')
+        elif lower.endswith('.kml'):
+            gdf = gpd.read_file(io.BytesIO(file_bytes), driver='KML')
+        else:
+            raise ValueError(f"Unsupported format for conversion: {filename}")
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError(f"Could not read spatial file '{filename}': {exc}") from exc
+
+    if gdf.empty:
+        raise ValueError("Spatial file contains no features")
+
+    # Auto-reproject to WGS84 if needed
+    if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
+        src_desc = f"EPSG:{gdf.crs.to_epsg()}" if gdf.crs.to_epsg() else str(gdf.crs)
+        gdf = gdf.to_crs("EPSG:4326")
+        warnings.append(f"File direproject dari {src_desc} ke WGS84 (EPSG:4326) secara otomatis.")
+    elif gdf.crs is None:
+        warnings.append("CRS tidak terdeteksi — diasumsikan WGS84 (EPSG:4326).")
+
+    # Explode MultiPolygon → Polygon
+    if (gdf.geometry.geom_type == 'MultiPolygon').any():
+        original_count = len(gdf)
+        gdf_ex = gdf.explode(index_parts=True)
+        part_indices = gdf_ex.index.get_level_values(1).to_numpy()
+        gdf_ex = gdf_ex.reset_index(drop=True).copy()
+
+        code_col = next((c for c in gdf_ex.columns if c.lower() == 'block_code'), None)
+        if code_col:
+            gdf_ex[code_col] = [
+                f"{str(code)}-P{int(pi) + 1}" if int(pi) > 0 else str(code)
+                for code, pi in zip(gdf_ex[code_col], part_indices)
+            ]
+        gdf = gdf_ex
+        warnings.append(
+            f"{original_count} fitur MultiPolygon di-explode menjadi {len(gdf)} Polygon."
+        )
+
+    return gdf.to_json().encode('utf-8'), warnings

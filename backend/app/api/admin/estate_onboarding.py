@@ -24,11 +24,12 @@ from pydantic import BaseModel
 
 from app.api.deps import get_current_admin
 from app.api.admin.audit_log import log_admin_action
-from app.database import get_db_pool
+from app.database import get_db_pool, settings
 from app.services.spatial_validator import (
     validate_geojson_bytes,
     run_postgis_validity,
     run_db_duplicate_check,
+    convert_to_geojson_bytes,
 )
 
 router = APIRouter()
@@ -323,11 +324,28 @@ async def import_preview(
     if estate is None:
         raise HTTPException(status_code=404, detail="Estate not found")
 
-    file_bytes = await file.read()
+    # Reject oversized uploads before reading into memory (DoS/memory-exhaustion prevention)
+    file_bytes = await file.read(settings.MAX_UPLOAD_SIZE_BYTES + 1)
+    if len(file_bytes) > settings.MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"File exceeds maximum upload size ({settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)",
+        )
     filename = file.filename or "upload.geojson"
+
+    # Convert Shapefile/KML/KMZ to GeoJSON before validation
+    conversion_warnings: list[str] = []
+    lower_ext = filename.lower()
+    if lower_ext.endswith('.zip') or lower_ext.endswith('.kml') or lower_ext.endswith('.kmz'):
+        try:
+            file_bytes, conversion_warnings = convert_to_geojson_bytes(file_bytes, filename)
+            filename = filename.rsplit('.', 1)[0] + '.geojson'
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
 
     # Phase 1: Python validation
     result = validate_geojson_bytes(file_bytes, filename)
+    result.warnings = conversion_warnings + result.warnings
 
     if result.file_error:
         async with pool.acquire() as conn:
@@ -426,8 +444,24 @@ async def import_commit(
         raise HTTPException(status_code=404, detail="Estate not found")
 
     company_id = estate["company_id"]
-    file_bytes = await file.read()
+
+    # Reject oversized uploads before reading into memory (DoS/memory-exhaustion prevention)
+    file_bytes = await file.read(settings.MAX_UPLOAD_SIZE_BYTES + 1)
+    if len(file_bytes) > settings.MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"File exceeds maximum upload size ({settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)",
+        )
     filename = file.filename or "upload.geojson"
+
+    # Convert Shapefile/KML/KMZ to GeoJSON before validation
+    lower_ext = filename.lower()
+    if lower_ext.endswith('.zip') or lower_ext.endswith('.kml') or lower_ext.endswith('.kmz'):
+        try:
+            file_bytes, _ = convert_to_geojson_bytes(file_bytes, filename)
+            filename = filename.rsplit('.', 1)[0] + '.geojson'
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
 
     # Phase 1: Python validation (same path as preview — no trust in client state)
     result = validate_geojson_bytes(file_bytes, filename)
