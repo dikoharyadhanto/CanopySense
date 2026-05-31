@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   fetchRasterMetadata,
   fetchRasterFrames,
@@ -213,6 +214,8 @@ export default function ExploreMap() {
     }
   };
 
+  const { t } = useTranslation();
+
   const subscriptionLabel = userCtx
     ? isPremium ? 'Premium — Timelapse' : 'Basic — Data Terbaru'
     : '';
@@ -301,7 +304,7 @@ export default function ExploreMap() {
                 data-testid="prev-frame-btn"
                 onClick={() => handleFrameChange(Math.min(frameIndex + 1, frames.length - 1))}
                 disabled={frameIndex >= frames.length - 1}
-                aria-label="Frame sebelumnya"
+                aria-label={t('exploreMap.prevFrameAriaLabel')}
                 className="p-1 rounded text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -319,7 +322,7 @@ export default function ExploreMap() {
                   value={frameIndex}
                   onChange={(e) => handleFrameChange(Number(e.target.value))}
                   className="w-full accent-[#1B3A2D]"
-                  aria-label="Pilih frame timelapse"
+                  aria-label={t('exploreMap.selectFrameAriaLabel')}
                 />
                 <div className="flex justify-between text-[10px] text-gray-400 px-0.5">
                   <span>{frames[frames.length - 1]?.label ?? ''}</span>
@@ -332,7 +335,7 @@ export default function ExploreMap() {
                 data-testid="next-frame-btn"
                 onClick={() => handleFrameChange(Math.max(frameIndex - 1, 0))}
                 disabled={frameIndex <= 0}
-                aria-label="Frame berikutnya"
+                aria-label={t('exploreMap.nextFrameAriaLabel')}
                 className="p-1 rounded text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -492,15 +495,15 @@ export default function ExploreMap() {
                 </div>
 
                 <div className="space-y-1 text-[11px]">
-                  <MetaRow label="Tanggal citra" value={metadata.date_acquired} />
-                  <MetaRow label="Sensor" value={metadata.sensor} />
-                  <MetaRow label="Resolusi" value={`${metadata.resolution_m}m/piksel`} />
+                  <MetaRow label={t('exploreMap.metaDate')} value={metadata.date_acquired} />
+                  <MetaRow label={t('exploreMap.metaSensor')} value={metadata.sensor} />
+                  <MetaRow label={t('exploreMap.metaResolution')} value={`${metadata.resolution_m}m/piksel`} />
                   <MetaRow
-                    label="Piksel valid"
+                    label={t('exploreMap.metaValidPixels')}
                     value={`${(metadata.valid_pixel_ratio * 100).toFixed(1)}%`}
                   />
                   <MetaRow
-                    label="Dibuat"
+                    label={t('exploreMap.metaCreated')}
                     value={new Date(metadata.generated_at_utc).toLocaleString('id-ID', {
                       dateStyle: 'short',
                       timeStyle: 'short',

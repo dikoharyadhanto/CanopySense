@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 
 export default function Register() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     company_name: '', contact_name: '', email: '', phone: '',
   });
@@ -22,7 +24,7 @@ export default function Register() {
       await api.post('/auth/register', form);
       setSuccess(true);
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Gagal mengirim pendaftaran. Coba lagi.');
+      setError(err?.response?.data?.detail ?? t('auth.register.errorGeneric'));
     } finally {
       setLoading(false);
     }
@@ -37,12 +39,10 @@ export default function Register() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-lg font-bold text-slate-800 mb-2">Pendaftaran Terkirim</h2>
-          <p className="text-sm text-slate-500 mb-6">
-            Pendaftaran Anda sedang ditinjau oleh administrator. Anda akan mendapat email konfirmasi setelah diproses.
-          </p>
+          <h2 className="text-lg font-bold text-slate-800 mb-2">{t('auth.register.successTitle')}</h2>
+          <p className="text-sm text-slate-500 mb-6">{t('auth.register.successMessage')}</p>
           <Link to="/login" className="text-sm text-green-700 hover:text-green-900 underline">
-            Kembali ke Login
+            {t('auth.register.backToLogin')}
           </Link>
         </div>
       </div>
@@ -59,62 +59,66 @@ export default function Register() {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-800">CanopySense</div>
-            <div className="text-[10px] text-slate-400">Daftarkan Perusahaan Anda</div>
+            <div className="text-[10px] text-slate-400">{t('auth.register.tagline')}</div>
           </div>
         </div>
 
-        <h1 className="text-xl font-bold text-slate-800 mb-1">Daftar Perusahaan</h1>
-        <p className="text-sm text-slate-500 mb-6">
-          Isi formulir di bawah untuk mendaftarkan perusahaan Anda. Administrator akan meninjau pendaftaran Anda.
-        </p>
+        <h1 className="text-xl font-bold text-slate-800 mb-1">{t('auth.register.title')}</h1>
+        <p className="text-sm text-slate-500 mb-6">{t('auth.register.subtitle')}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nama Perusahaan</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {t('auth.register.companyNameLabel')}
+            </label>
             <input
               type="text"
               name="company_name"
               value={form.company_name}
               onChange={handleChange}
               required
-              placeholder="PT. Contoh Perkebunan"
+              placeholder={t('auth.register.companyNamePlaceholder')}
               className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nama Kontak</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {t('auth.register.contactNameLabel')}
+            </label>
             <input
               type="text"
               name="contact_name"
               value={form.contact_name}
               onChange={handleChange}
               required
-              placeholder="Nama lengkap"
+              placeholder={t('auth.register.contactNamePlaceholder')}
               className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {t('auth.register.emailLabel')}
+            </label>
             <input
               type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
               required
-              placeholder="email@perusahaan.com"
+              placeholder={t('auth.register.emailPlaceholder')}
               className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Nomor Telepon <span className="text-slate-400 font-normal">(opsional)</span>
+              {t('auth.register.phoneLabel')} <span className="text-slate-400 font-normal">{t('common.optional')}</span>
             </label>
             <input
               type="tel"
               name="phone"
               value={form.phone}
               onChange={handleChange}
-              placeholder="+62..."
+              placeholder={t('auth.register.phonePlaceholder')}
               className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
@@ -131,12 +135,12 @@ export default function Register() {
             className="w-full bg-[#19C853] hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed
                        text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
           >
-            {loading ? 'Mengirim...' : 'Kirim Pendaftaran'}
+            {loading ? t('auth.register.submitting') : t('auth.register.submitButton')}
           </button>
 
           <div className="text-center">
             <Link to="/login" className="text-sm text-slate-500 hover:text-slate-700 underline">
-              Sudah punya akun? Masuk
+              {t('auth.register.backToLogin')}
             </Link>
           </div>
         </form>

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api, { API_BASE } from '../../lib/api';
 import { getStoredUser } from '../../lib/auth';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BrandingData {
   company_name: string | null;
@@ -19,9 +18,8 @@ interface SettingsData {
 
 type Tab = 'branding' | 'estate' | 'notifikasi';
 
-// ─── Sub-component: Branding & Header ────────────────────────────────────────
-
 function TabBranding({ companyId }: { companyId: number }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<BrandingData>({
     company_name: null, logo_path: null, show_name_in_header: false, show_logo_in_header: false,
   });
@@ -55,9 +53,9 @@ function TabBranding({ companyId }: { companyId: number }) {
     try {
       await api.patch(`/api/companies/${companyId}`, { company_name: nameInput });
       setData((d) => ({ ...d, company_name: nameInput }));
-      setNameMsg('Nama perusahaan disimpan.');
+      setNameMsg(t('settings.branding.nameSaved'));
     } catch (err: any) {
-      setNameMsg(err?.response?.data?.detail ?? 'Gagal menyimpan.');
+      setNameMsg(err?.response?.data?.detail ?? t('settings.branding.errorSaveName'));
     } finally {
       setNameSaving(false);
     }
@@ -76,9 +74,9 @@ function TabBranding({ companyId }: { companyId: number }) {
       });
       setData((d) => ({ ...d, logo_path: 'set' }));
       setLogoTs(Date.now());
-      setLogoMsg('Logo berhasil diunggah.');
+      setLogoMsg(t('settings.branding.logoUploaded'));
     } catch (err: any) {
-      setLogoMsg(err?.response?.data?.detail ?? 'Gagal mengunggah logo.');
+      setLogoMsg(err?.response?.data?.detail ?? t('settings.branding.errorUploadLogo'));
     } finally {
       setLogoUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -86,14 +84,14 @@ function TabBranding({ companyId }: { companyId: number }) {
   }
 
   async function handleLogoDelete() {
-    if (!confirm('Hapus logo perusahaan?')) return;
+    if (!confirm(t('settings.branding.confirmDeleteLogo'))) return;
     try {
       await api.delete(`/api/companies/${companyId}/logo`);
       setData((d) => ({ ...d, logo_path: null }));
       setLogoTs(Date.now());
-      setLogoMsg('Logo dihapus.');
+      setLogoMsg(t('settings.branding.logoDeleted'));
     } catch (err: any) {
-      setLogoMsg(err?.response?.data?.detail ?? 'Gagal menghapus logo.');
+      setLogoMsg(err?.response?.data?.detail ?? t('settings.branding.errorDeleteLogo'));
     }
   }
 
@@ -103,48 +101,50 @@ function TabBranding({ companyId }: { companyId: number }) {
       await api.patch(`/api/companies/${companyId}`, { [field]: newVal });
       setData((d) => ({ ...d, [field]: newVal }));
     } catch (err: any) {
-      alert(err?.response?.data?.detail ?? 'Gagal menyimpan pengaturan.');
+      alert(err?.response?.data?.detail ?? t('settings.branding.errorToggleHeader'));
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">Memuat...</p>;
+  if (loading) return <p className="text-sm text-slate-400">{t('common.loading')}</p>;
 
   return (
     <div className="space-y-6">
-      {/* Company name */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">Nama Perusahaan</h2>
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
+          {t('settings.branding.companyNameSection')}
+        </h2>
         <form onSubmit={handleSaveName} className="flex gap-3">
           <input
             type="text"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             required
-            placeholder="Nama perusahaan"
+            placeholder={t('settings.branding.companyNamePlaceholder')}
             className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <button type="submit" disabled={nameSaving}
             className="bg-[#19C853] hover:bg-green-500 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors whitespace-nowrap">
-            {nameSaving ? 'Menyimpan...' : 'Simpan'}
+            {nameSaving ? t('settings.branding.saving') : t('settings.branding.saveButton')}
           </button>
         </form>
         {nameMsg && <p className="text-sm mt-2 text-slate-600">{nameMsg}</p>}
       </div>
 
-      {/* Logo */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">Logo Perusahaan</h2>
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
+          {t('settings.branding.logoSection')}
+        </h2>
         {data.logo_path && (
           <div className="mb-4 flex items-center gap-4">
             <img
               src={`${API_BASE}/api/companies/${companyId}/logo?t=${logoTs}`}
-              alt="Logo"
+              alt={t('settings.branding.logoAlt')}
               style={{ maxHeight: 48, maxWidth: 200 }}
               className="object-contain border border-slate-200 rounded p-1"
             />
             <button onClick={handleLogoDelete}
               className="text-sm text-red-600 hover:text-red-800 underline">
-              Hapus logo
+              {t('settings.branding.deleteLogoButton')}
             </button>
           </div>
         )}
@@ -156,24 +156,25 @@ function TabBranding({ companyId }: { companyId: number }) {
             onChange={handleLogoUpload}
             className="text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:text-sm file:font-medium hover:file:bg-slate-200"
           />
-          {logoUploading && <span className="text-sm text-slate-400">Mengunggah...</span>}
+          {logoUploading && <span className="text-sm text-slate-400">{t('settings.branding.logoUploading')}</span>}
         </div>
         <div className="mt-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 space-y-1">
-          <p className="text-xs font-medium text-slate-600">Panduan logo:</p>
+          <p className="text-xs font-medium text-slate-600">{t('settings.branding.logoGuidelines')}</p>
           <ul className="text-xs text-slate-500 space-y-0.5 list-disc list-inside">
-            <li>Format: <strong>PNG</strong> (disarankan), JPEG, atau SVG</li>
-            <li>Ukuran maks. file: <strong>2 MB</strong></li>
-            <li>Akan otomatis diubah ukurannya menjadi maks. <strong>200 × 48 px</strong></li>
-            <li>Gunakan PNG dengan <strong>latar belakang transparan</strong> agar tampil rapi di header</li>
-            <li>Hindari logo dengan teks kecil — akan terlihat buram setelah dikecilkan</li>
+            <li>{t('settings.branding.logoGuidelineFormat')}</li>
+            <li>{t('settings.branding.logoGuidelineSize')}</li>
+            <li>{t('settings.branding.logoGuidelineResize')}</li>
+            <li>{t('settings.branding.logoGuidelineTransparent')}</li>
+            <li>{t('settings.branding.logoGuidelineText')}</li>
           </ul>
         </div>
         {logoMsg && <p className="text-sm mt-2 text-slate-600">{logoMsg}</p>}
       </div>
 
-      {/* Header visibility */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">Tampilan Header</h2>
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
+          {t('settings.branding.headerVisibilitySection')}
+        </h2>
         <div className="space-y-3">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -182,7 +183,7 @@ function TabBranding({ companyId }: { companyId: number }) {
               onChange={() => handleToggleHeader('show_name_in_header')}
               className="w-4 h-4 accent-green-600"
             />
-            <span className="text-sm text-slate-700">Tampilkan nama perusahaan di header</span>
+            <span className="text-sm text-slate-700">{t('settings.branding.showNameInHeader')}</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -191,7 +192,7 @@ function TabBranding({ companyId }: { companyId: number }) {
               onChange={() => handleToggleHeader('show_logo_in_header')}
               className="w-4 h-4 accent-green-600"
             />
-            <span className="text-sm text-slate-700">Tampilkan logo perusahaan di header</span>
+            <span className="text-sm text-slate-700">{t('settings.branding.showLogoInHeader')}</span>
           </label>
         </div>
       </div>
@@ -199,9 +200,8 @@ function TabBranding({ companyId }: { companyId: number }) {
   );
 }
 
-// ─── Sub-component: Estate Change ─────────────────────────────────────────────
-
 function TabEstateChange({ companyId }: { companyId: number }) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<string>('NONE');
   const [rejectReason, setRejectReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,9 +236,9 @@ function TabEstateChange({ companyId }: { companyId: number }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setStatus('PENDING');
-      setMsg({ type: 'success', text: 'Permintaan perubahan estate berhasil dikirim.' });
+      setMsg({ type: 'success', text: t('settings.estate.successSubmit') });
     } catch (err: any) {
-      setMsg({ type: 'error', text: err?.response?.data?.detail ?? 'Gagal mengirim permintaan.' });
+      setMsg({ type: 'error', text: err?.response?.data?.detail ?? t('settings.estate.errorSubmit') });
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -246,20 +246,23 @@ function TabEstateChange({ companyId }: { companyId: number }) {
   }
 
   async function handleCancel() {
-    if (!confirm('Batalkan permintaan perubahan estate?')) return;
+    if (!confirm(t('settings.estate.confirmCancel'))) return;
     try {
       await api.post(`/api/companies/${companyId}/estate-change/cancel`);
       setStatus('NONE');
-      setMsg({ type: 'success', text: 'Permintaan dibatalkan.' });
+      setMsg({ type: 'success', text: t('settings.estate.successCancel') });
     } catch (err: any) {
-      setMsg({ type: 'error', text: err?.response?.data?.detail ?? 'Gagal membatalkan.' });
+      setMsg({ type: 'error', text: err?.response?.data?.detail ?? t('settings.estate.errorCancel') });
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">Memuat...</p>;
+  if (loading) return <p className="text-sm text-slate-400">{t('common.loading')}</p>;
 
   const statusLabel: Record<string, string> = {
-    NONE: '—', PENDING: 'Menunggu Review', APPROVED: 'Disetujui', REJECTED: 'Ditolak',
+    NONE: t('settings.estate.status.none'),
+    PENDING: t('settings.estate.status.pending'),
+    APPROVED: t('settings.estate.status.approved'),
+    REJECTED: t('settings.estate.status.rejected'),
   };
   const statusColor: Record<string, string> = {
     NONE: 'text-slate-400', PENDING: 'text-amber-600', APPROVED: 'text-green-600', REJECTED: 'text-red-600',
@@ -267,24 +270,21 @@ function TabEstateChange({ companyId }: { companyId: number }) {
 
   return (
     <div className="space-y-6">
-      {/* Warning popup */}
       {showWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-base font-bold text-slate-800 mb-3">Peringatan</h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Semua data estate yang ada akan digantikan. Tindakan ini tidak dapat dibatalkan setelah disetujui.
-            </p>
+            <h3 className="text-base font-bold text-slate-800 mb-3">{t('settings.estate.warningTitle')}</h3>
+            <p className="text-sm text-slate-600 mb-6">{t('settings.estate.warningMessage')}</p>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowWarning(false)}
                 className="text-sm text-slate-600 hover:text-slate-800 border border-slate-300 px-4 py-2 rounded-lg">
-                Batal
+                {t('settings.estate.warningCancelButton')}
               </button>
               <button
                 onClick={() => { setShowWarning(false); fileRef.current?.click(); }}
                 className="text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg"
               >
-                Lanjutkan
+                {t('settings.estate.warningContinueButton')}
               </button>
             </div>
           </div>
@@ -292,10 +292,12 @@ function TabEstateChange({ companyId }: { companyId: number }) {
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">Perubahan Data Estate</h2>
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
+          {t('settings.estate.sectionTitle')}
+        </h2>
 
         <div className="mb-4">
-          <span className="text-sm text-slate-500">Status saat ini: </span>
+          <span className="text-sm text-slate-500">{t('settings.estate.currentStatus')} </span>
           <span className={`text-sm font-semibold ${statusColor[status] ?? 'text-slate-600'}`}>
             {statusLabel[status] ?? status}
           </span>
@@ -303,7 +305,7 @@ function TabEstateChange({ companyId }: { companyId: number }) {
 
         {status === 'REJECTED' && rejectReason && (
           <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
-            <strong>Alasan penolakan:</strong> {rejectReason}
+            <strong>{t('settings.estate.rejectReason')}</strong> {rejectReason}
           </div>
         )}
 
@@ -324,9 +326,9 @@ function TabEstateChange({ companyId }: { companyId: number }) {
               disabled={uploading}
               className="bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
             >
-              {uploading ? 'Mengunggah...' : 'Ajukan Perubahan Estate'}
+              {uploading ? t('settings.estate.uploading') : t('settings.estate.submitButton')}
             </button>
-            <p className="text-xs text-slate-400 mt-2">Format: GeoJSON, SHP zip, KML, atau KMZ. Maks. 10 MB.</p>
+            <p className="text-xs text-slate-400 mt-2">{t('settings.estate.fileFormat')}</p>
           </>
         )}
 
@@ -335,7 +337,7 @@ function TabEstateChange({ companyId }: { companyId: number }) {
             onClick={handleCancel}
             className="text-sm text-red-600 hover:text-red-800 border border-red-300 px-4 py-2 rounded-lg"
           >
-            Batalkan Permintaan
+            {t('settings.estate.cancelButton')}
           </button>
         )}
 
@@ -349,9 +351,8 @@ function TabEstateChange({ companyId }: { companyId: number }) {
   );
 }
 
-// ─── Sub-component: Notifikasi ────────────────────────────────────────────────
-
 function TabNotifikasi({ companyId }: { companyId: number }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<SettingsData>({
     timezone: 'Asia/Jakarta', notify_pipeline_failure: true, notify_pipeline_success: false,
   });
@@ -371,23 +372,27 @@ function TabNotifikasi({ companyId }: { companyId: number }) {
     setMsg(null);
     try {
       await api.patch(`/api/companies/${companyId}/settings`, data);
-      setMsg('Pengaturan notifikasi disimpan.');
+      setMsg(t('settings.notifications.successSave'));
     } catch (err: any) {
-      setMsg(err?.response?.data?.detail ?? 'Gagal menyimpan.');
+      setMsg(err?.response?.data?.detail ?? t('settings.notifications.errorSave'));
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">Memuat...</p>;
+  if (loading) return <p className="text-sm text-slate-400">{t('common.loading')}</p>;
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">Notifikasi & Zona Waktu</h2>
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
+          {t('settings.notifications.sectionTitle')}
+        </h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Zona Waktu</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {t('settings.notifications.timezoneLabel')}
+            </label>
             <select
               value={data.timezone}
               onChange={(e) => setData((d) => ({ ...d, timezone: e.target.value }))}
@@ -406,7 +411,7 @@ function TabNotifikasi({ companyId }: { companyId: number }) {
               onChange={(e) => setData((d) => ({ ...d, notify_pipeline_failure: e.target.checked }))}
               className="w-4 h-4 accent-green-600"
             />
-            <span className="text-sm text-slate-700">Notifikasi ketika pipeline gagal</span>
+            <span className="text-sm text-slate-700">{t('settings.notifications.notifyFailure')}</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -415,12 +420,12 @@ function TabNotifikasi({ companyId }: { companyId: number }) {
               onChange={(e) => setData((d) => ({ ...d, notify_pipeline_success: e.target.checked }))}
               className="w-4 h-4 accent-green-600"
             />
-            <span className="text-sm text-slate-700">Notifikasi ketika pipeline berhasil</span>
+            <span className="text-sm text-slate-700">{t('settings.notifications.notifySuccess')}</span>
           </label>
         </div>
         <button type="submit" disabled={saving}
           className="mt-5 bg-[#19C853] hover:bg-green-500 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors">
-          {saving ? 'Menyimpan...' : 'Simpan'}
+          {saving ? t('settings.notifications.saving') : t('settings.notifications.saveButton')}
         </button>
         {msg && <p className="text-sm mt-2 text-slate-600">{msg}</p>}
       </div>
@@ -428,9 +433,8 @@ function TabNotifikasi({ companyId }: { companyId: number }) {
   );
 }
 
-// ─── Main Settings Page ───────────────────────────────────────────────────────
-
 export default function Settings() {
+  const { t } = useTranslation();
   const me = getStoredUser();
   const companyId = me?.company_id;
   const [tab, setTab] = useState<Tab>('branding');
@@ -438,26 +442,25 @@ export default function Settings() {
   if (me?.role !== 'manager') {
     return (
       <div className="p-8 text-center text-slate-500 text-sm">
-        Halaman ini hanya tersedia untuk Manager.
+        {t('settings.managerOnly')}
       </div>
     );
   }
 
   if (!companyId) {
-    return <div className="p-8 text-center text-slate-500 text-sm">Perusahaan tidak ditemukan.</div>;
+    return <div className="p-8 text-center text-slate-500 text-sm">{t('settings.noCompany')}</div>;
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'branding', label: 'Branding & Header' },
-    { key: 'estate', label: 'Perubahan Estate' },
-    { key: 'notifikasi', label: 'Notifikasi' },
+    { key: 'branding', label: t('settings.tabs.branding') },
+    { key: 'estate', label: t('settings.tabs.estate') },
+    { key: 'notifikasi', label: t('settings.tabs.notifications') },
   ];
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
-      <h1 className="text-xl font-bold text-slate-800 mb-6">Pengaturan</h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-6">{t('settings.pageTitle')}</h1>
 
-      {/* Tab bar */}
       <div className="flex gap-1 mb-6 border-b border-slate-200">
         {tabs.map(({ key, label }) => (
           <button

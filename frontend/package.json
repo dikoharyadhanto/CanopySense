@@ -14,9 +14,11 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "axios": "^1.16.1",
+    "i18next": "^26.3.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.15.1",
     "recharts": "^3.8.1"

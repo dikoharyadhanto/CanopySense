@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api';
 
 interface SettingsResponse {
@@ -6,6 +7,7 @@ interface SettingsResponse {
 }
 
 export default function SystemSettings() {
+  const { t } = useTranslation();
   const [data, setData] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export default function SystemSettings() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-xl font-bold text-slate-800 mb-6">Pengaturan Sistem</h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-6">{t('navigation.admin.systemSettings')}</h1>
 
       {loading ? (
         <p className="text-sm text-slate-400">Memuat...</p>

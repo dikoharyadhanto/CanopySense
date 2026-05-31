@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSubscription, updateSubscription, type Subscription } from '../../lib/adminApi';
@@ -8,6 +9,7 @@ const RASTER_MODES = ['gee_mapid', 'maps_platform'];
 const BILLING_INTERVALS = ['monthly', 'yearly', 'fixed_period'];
 
 export default function SubscriptionEdit() {
+  const { t } = useTranslation();
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [sub, setSub] = useState<Subscription | null>(null);
@@ -63,7 +65,7 @@ export default function SubscriptionEdit() {
       >
         ← Back to Company
       </button>
-      <h1 className="text-xl font-bold text-slate-800 mb-6">Edit Subscription</h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-6">{t('admin.subscriptionEdit.title')}</h1>
       <form onSubmit={handleSave} className="max-w-md space-y-4">
         <div>
           <label className="block text-sm text-slate-600 mb-1">Tier</label>

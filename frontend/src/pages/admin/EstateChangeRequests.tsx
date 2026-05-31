@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Feature } from 'geojson';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api';
 import BlockImportMap from '../../components/BlockImportMap';
 
@@ -13,9 +14,6 @@ interface RequestItem {
 
 type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: 'Menunggu', APPROVED: 'Disetujui', REJECTED: 'Ditolak',
-};
 const STATUS_COLOR: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-700',
   APPROVED: 'bg-green-100 text-green-700',
@@ -23,6 +21,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function EstateChangeRequests() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<RequestItem[]>([]);
   const [filter, setFilter] = useState<StatusFilter>('PENDING');
   const [loading, setLoading] = useState(true);
@@ -33,6 +32,12 @@ export default function EstateChangeRequests() {
   const [rejectTarget, setRejectTarget] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+
+  const STATUS_LABEL: Record<string, string> = {
+    PENDING: t('admin.estateChange.filter.pending'),
+    APPROVED: t('admin.estateChange.filter.approved'),
+    REJECTED: t('admin.estateChange.filter.rejected'),
+  };
 
   async function fetchItems() {
     setLoading(true);
@@ -56,52 +61,53 @@ export default function EstateChangeRequests() {
       );
       setPreview({ companyId, features: res.data.features });
     } catch (err: any) {
-      alert(err?.response?.data?.detail ?? 'Gagal memuat preview.');
+      alert(err?.response?.data?.detail ?? t('admin.estateChange.preview.errorLoad'));
     } finally {
       setPreviewLoading(false);
     }
   }
 
   async function handleApprove(companyId: number) {
-    if (!confirm('Setujui perubahan estate ini? Data lama akan diarsipkan.')) return;
+    if (!confirm(t('admin.estateChange.confirmApprove'))) return;
     try {
       await api.post(`/api/admin/estate-change-requests/${companyId}/approve`);
-      setActionMsg('Perubahan estate disetujui.');
+      setActionMsg(t('admin.estateChange.successApprove'));
       setPreview(null);
       fetchItems();
     } catch (err: any) {
-      alert(err?.response?.data?.detail ?? 'Gagal menyetujui.');
+      alert(err?.response?.data?.detail ?? t('admin.estateChange.errorApprove'));
     }
   }
 
   async function handleReject(companyId: number) {
     if (!rejectReason.trim()) {
-      alert('Alasan penolakan harus diisi.');
+      alert(t('admin.estateChange.rejectModal.errorEmptyReason'));
       return;
     }
     try {
       await api.post(`/api/admin/estate-change-requests/${companyId}/reject`, { reason: rejectReason });
-      setActionMsg('Permintaan ditolak.');
+      setActionMsg(t('admin.estateChange.successReject'));
       setRejectTarget(null);
       setRejectReason('');
       fetchItems();
     } catch (err: any) {
-      alert(err?.response?.data?.detail ?? 'Gagal menolak.');
+      alert(err?.response?.data?.detail ?? t('admin.estateChange.errorReject'));
     }
   }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-xl font-bold text-slate-800 mb-6">Permintaan Perubahan Estate</h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-6">{t('admin.estateChange.title')}</h1>
 
       {actionMsg && (
         <div className="mb-4 rounded-lg bg-green-50 border border-green-200 px-3 py-2.5 text-sm text-green-700">
           {actionMsg}
-          <button className="ml-3 underline text-green-700" onClick={() => setActionMsg(null)}>Tutup</button>
+          <button className="ml-3 underline text-green-700" onClick={() => setActionMsg(null)}>
+            {t('common.close')}
+          </button>
         </div>
       )}
 
-      {/* Filter */}
       <div className="flex gap-2 mb-5">
         {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as StatusFilter[]).map((s) => (
           <button
@@ -113,24 +119,24 @@ export default function EstateChangeRequests() {
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            {s === 'ALL' ? 'Semua' : STATUS_LABEL[s]}
+            {s === 'ALL' ? t('admin.estateChange.filter.all') : STATUS_LABEL[s]}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-400">Memuat...</p>
+        <p className="text-sm text-slate-400">{t('admin.estateChange.loading')}</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-slate-400">Tidak ada permintaan.</p>
+        <p className="text-sm text-slate-400">{t('admin.estateChange.noItems')}</p>
       ) : (
         <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
           <table className="w-full text-sm">
             <thead className="border-b border-slate-200 text-slate-500 text-left">
               <tr>
-                <th className="px-4 py-3 font-medium">Perusahaan</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Diajukan</th>
-                <th className="px-4 py-3 font-medium">Aksi</th>
+                <th className="px-4 py-3 font-medium">{t('admin.estateChange.table.company')}</th>
+                <th className="px-4 py-3 font-medium">{t('admin.estateChange.table.status')}</th>
+                <th className="px-4 py-3 font-medium">{t('admin.estateChange.table.submittedAt')}</th>
+                <th className="px-4 py-3 font-medium">{t('admin.estateChange.table.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -153,7 +159,7 @@ export default function EstateChangeRequests() {
                         onClick={() => handlePreview(item.company_id)}
                         className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-1 rounded-lg"
                       >
-                        {previewLoading ? 'Memuat...' : 'Preview'}
+                        {previewLoading ? t('admin.estateChange.previewLoading') : t('admin.estateChange.previewButton')}
                       </button>
                       {item.estate_change_status === 'PENDING' && (
                         <>
@@ -161,19 +167,21 @@ export default function EstateChangeRequests() {
                             onClick={() => handleApprove(item.company_id)}
                             className="text-xs bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded-lg font-medium"
                           >
-                            Setujui
+                            {t('admin.estateChange.approveButton')}
                           </button>
                           <button
                             onClick={() => { setRejectTarget(item.company_id); setRejectReason(''); }}
                             className="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 rounded-lg"
                           >
-                            Tolak
+                            {t('admin.estateChange.rejectButton')}
                           </button>
                         </>
                       )}
                     </div>
                     {item.estate_change_reject_reason && (
-                      <p className="text-xs text-red-500 mt-1">Alasan: {item.estate_change_reject_reason}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {t('admin.estateChange.rejectReason')} {item.estate_change_reject_reason}
+                      </p>
                     )}
                   </td>
                 </tr>
@@ -183,13 +191,14 @@ export default function EstateChangeRequests() {
         </div>
       )}
 
-      {/* Map preview panel */}
       {preview && (
         <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-700">Preview GeoJSON (Company #{preview.companyId})</h2>
+            <h2 className="text-sm font-semibold text-slate-700">
+              {t('admin.estateChange.preview.title', { companyId: preview.companyId })}
+            </h2>
             <button onClick={() => setPreview(null)} className="text-xs text-slate-400 hover:text-slate-600 underline">
-              Tutup
+              {t('admin.estateChange.preview.closeButton')}
             </button>
           </div>
           {preview.features.length > 0 ? (
@@ -197,31 +206,32 @@ export default function EstateChangeRequests() {
               <BlockImportMap features={preview.features} />
             </div>
           ) : (
-            <p className="text-sm text-slate-400">Tidak ada fitur geometri untuk ditampilkan.</p>
+            <p className="text-sm text-slate-400">{t('admin.estateChange.preview.noFeatures')}</p>
           )}
         </div>
       )}
 
-      {/* Reject modal */}
       {rejectTarget !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-base font-bold text-slate-800 mb-3">Tolak Permintaan</h3>
+            <h3 className="text-base font-bold text-slate-800 mb-3">
+              {t('admin.estateChange.rejectModal.title')}
+            </h3>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Alasan penolakan..."
+              placeholder={t('admin.estateChange.rejectModal.reasonPlaceholder')}
               rows={3}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mb-4"
             />
             <div className="flex gap-3 justify-end">
               <button onClick={() => setRejectTarget(null)}
                 className="text-sm text-slate-600 border border-slate-300 px-4 py-2 rounded-lg">
-                Batal
+                {t('admin.estateChange.rejectModal.cancelButton')}
               </button>
               <button onClick={() => handleReject(rejectTarget!)}
                 className="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg">
-                Tolak
+                {t('admin.estateChange.rejectModal.confirmButton')}
               </button>
             </div>
           </div>

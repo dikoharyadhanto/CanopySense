@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import {
   listInternalAdmins,
@@ -8,6 +9,7 @@ import {
 } from '../../lib/adminApi';
 
 export default function UserManagement() {
+  const { t } = useTranslation();
   const [admins, setAdmins] = useState<InternalAdmin[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function UserManagement() {
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-slate-800">Internal Admin Users</h1>
+        <h1 className="text-xl font-bold text-slate-800">{t('navigation.admin.adminUsers')}</h1>
         <button
           onClick={() => setShowCreate(true)}
           className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"

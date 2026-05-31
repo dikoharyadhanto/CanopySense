@@ -1,31 +1,8 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getMe, UserContext } from '../lib/adminApi';
 import { getStoredUser, clearToken } from '../lib/auth';
-
-const ADMIN_NAV = [
-  { to: '/admin',                label: 'Dashboard',        end: true },
-  { to: '/admin/companies',      label: 'Companies',        end: false },
-  { to: '/admin/audit',          label: 'Audit Log',        end: false },
-];
-
-const PIPELINE_NAV = [
-  { to: '/admin/pipeline/trigger',   label: 'Trigger Run',    end: false },
-  { to: '/admin/pipeline/history',   label: 'Run History',    end: false },
-  { to: '/admin/pipeline/schedules', label: 'Schedules',      end: false },
-];
-
-const DATA_NAV = [
-  { to: '/admin/estate-onboarding', label: 'Estate Onboarding', end: false },
-];
-
-const SUPER_ADMIN_NAV = [
-  { to: '/admin/users',                    label: 'Admin Users',        end: false },
-  { to: '/admin/data-viewer',              label: 'Data Viewer',        end: false },
-  { to: '/admin/estate-change-requests',   label: 'Estate Change',      end: false },
-  { to: '/admin/registrations',            label: 'Registrations',      end: false },
-  { to: '/admin/system-settings',          label: 'System Settings',    end: false },
-];
 
 function Initials({ name }: { name: string }) {
   const letters = name
@@ -42,6 +19,7 @@ function Initials({ name }: { name: string }) {
 }
 
 export default function AdminLayout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = getStoredUser();
   const [me, setMe] = useState<UserContext | null>(null);
@@ -54,6 +32,30 @@ export default function AdminLayout() {
     clearToken();
     navigate('/login', { replace: true });
   }
+
+  const ADMIN_NAV = [
+    { to: '/admin',             label: t('navigation.admin.dashboard'),  end: true },
+    { to: '/admin/companies',   label: t('navigation.admin.companies'),  end: false },
+    { to: '/admin/audit',       label: t('navigation.admin.auditLog'),   end: false },
+  ];
+
+  const PIPELINE_NAV = [
+    { to: '/admin/pipeline/trigger',   label: t('navigation.admin.triggerRun'), end: false },
+    { to: '/admin/pipeline/history',   label: t('navigation.admin.runHistory'), end: false },
+    { to: '/admin/pipeline/schedules', label: t('navigation.admin.schedules'),  end: false },
+  ];
+
+  const DATA_NAV = [
+    { to: '/admin/estate-onboarding', label: t('navigation.admin.estateOnboarding'), end: false },
+  ];
+
+  const SUPER_ADMIN_NAV = [
+    { to: '/admin/users',                    label: t('navigation.admin.adminUsers'),     end: false },
+    { to: '/admin/data-viewer',              label: t('navigation.admin.dataViewer'),     end: false },
+    { to: '/admin/estate-change-requests',   label: t('navigation.admin.estateChange'),   end: false },
+    { to: '/admin/registrations',            label: t('navigation.admin.registrations'),  end: false },
+    { to: '/admin/system-settings',          label: t('navigation.admin.systemSettings'), end: false },
+  ];
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -79,12 +81,12 @@ export default function AdminLayout() {
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
           <div className="pt-1 pb-1 px-3">
             <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400/60">
-              Management
+              {t('navigation.admin.management')}
             </div>
           </div>
           {ADMIN_NAV.map(({ to, label, end }) => (
             <NavLink
-              key={label}
+              key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
@@ -101,12 +103,12 @@ export default function AdminLayout() {
 
           <div className="pt-4 pb-1 px-3">
             <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400/60">
-              Pipeline
+              {t('navigation.admin.pipeline')}
             </div>
           </div>
           {PIPELINE_NAV.map(({ to, label, end }) => (
             <NavLink
-              key={label}
+              key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
@@ -123,12 +125,12 @@ export default function AdminLayout() {
 
           <div className="pt-4 pb-1 px-3">
             <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400/60">
-              Data
+              {t('navigation.admin.data')}
             </div>
           </div>
           {DATA_NAV.map(({ to, label, end }) => (
             <NavLink
-              key={label}
+              key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
@@ -147,12 +149,12 @@ export default function AdminLayout() {
             <>
               <div className="pt-4 pb-1 px-3">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400/60">
-                  Super Admin
+                  {t('navigation.admin.superAdmin')}
                 </div>
               </div>
               {SUPER_ADMIN_NAV.map(({ to, label, end }) => (
                 <NavLink
-                  key={label}
+                  key={to}
                   to={to}
                   end={end}
                   className={({ isActive }) =>
@@ -174,7 +176,7 @@ export default function AdminLayout() {
               to="/dashboard"
               className="flex items-center gap-2 px-0 py-1 text-[11px] text-slate-400 hover:text-white transition-colors"
             >
-              ← Back to Dashboard
+              {t('navigation.admin.backToDashboard')}
             </NavLink>
           </div>
         </nav>

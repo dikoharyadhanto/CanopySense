@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 const INDICES = [
   { value: 'ndvi', label: 'NDVI' },
   { value: 'evi', label: 'EVI' },
@@ -14,9 +16,10 @@ interface Props {
 }
 
 export default function IndexSelector({ value, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2">
-      <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Index:</label>
+      <label className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('indexSelector.label')}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as IndexKey)}

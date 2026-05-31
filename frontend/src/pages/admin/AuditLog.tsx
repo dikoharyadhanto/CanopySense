@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { listAuditLog, type AuditEntry } from '../../lib/adminApi';
 
 const PAGE_SIZE = 25;
 
 export default function AuditLog() {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -26,7 +28,7 @@ export default function AuditLog() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <h1 className="text-xl font-bold text-slate-800 mb-6">Audit Log ({total})</h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-6">{t('navigation.admin.auditLog')} ({total})</h1>
       {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
       {loading ? (
         <div className="text-slate-400 text-sm">Loading...</div>

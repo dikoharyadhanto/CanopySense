@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { getMe } from '../lib/adminApi';
 
 type Step = 'credentials' | 'otp';
 
 export default function Login() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
@@ -28,7 +30,6 @@ export default function Login() {
       });
 
       if (response.status === 202) {
-        // Device OTP challenge — show OTP step
         setPendingToken(response.data.pending_token);
         setStep('otp');
         return;
@@ -38,7 +39,7 @@ export default function Login() {
       const me = await getMe();
       navigate(me.is_global_admin || me.is_admin ? '/admin' : '/dashboard');
     } catch {
-      setError('Username atau password salah. Silakan coba lagi.');
+      setError(t('auth.login.errorInvalid'));
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,7 @@ export default function Login() {
       const me = await getMe();
       navigate(me.is_global_admin || me.is_admin ? '/admin' : '/dashboard');
     } catch {
-      setError('Kode verifikasi salah atau kadaluarsa. Silakan coba lagi.');
+      setError(t('auth.otp.errorInvalid'));
     } finally {
       setLoading(false);
     }
@@ -70,9 +71,8 @@ export default function Login() {
         pending_token: pendingToken,
       });
       setPendingToken(response.data.pending_token);
-      setError('');
     } catch {
-      setError('Gagal mengirim ulang kode. Coba lagi dalam beberapa saat.');
+      setError(t('auth.otp.errorResend'));
     }
   };
 
@@ -91,15 +91,14 @@ export default function Login() {
             </div>
           </div>
           <h2 className="text-white text-2xl font-bold leading-snug mb-4">
-            Data satelit real-time<br />untuk perkebunan<br />yang lebih cerdas.
+            {t('auth.brandPanel.tagline')}
           </h2>
           <p className="text-green-300/80 text-sm leading-relaxed">
-            Pantau kesehatan kanopi, tren indeks vegetasi, dan status blok estate
-            Anda langsung dari citra satelit terkini.
+            {t('auth.brandPanel.description')}
           </p>
         </div>
         <div className="text-green-400/50 text-xs">
-          CanopySense v1.5 · Phase 1 Manager Portal
+          {t('auth.brandPanel.version')}
         </div>
       </div>
 
@@ -116,14 +115,12 @@ export default function Login() {
         <div className="w-full max-w-sm">
           {step === 'credentials' ? (
             <>
-              <h1 className="text-2xl font-bold text-gray-800 mb-1">Masuk</h1>
-              <p className="text-sm text-gray-500 mb-8">
-                Masuk ke Manager Portal untuk melanjutkan.
-              </p>
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">{t('auth.login.title')}</h1>
+              <p className="text-sm text-gray-500 mb-8">{t('auth.login.subtitle')}</p>
               <form onSubmit={handleLogin} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Username
+                    {t('auth.login.usernameLabel')}
                   </label>
                   <input
                     type="text"
@@ -134,12 +131,12 @@ export default function Login() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
                                focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
                                bg-white text-gray-900 placeholder-gray-400"
-                    placeholder="Masukkan username"
+                    placeholder={t('auth.login.usernamePlaceholder')}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Password
+                    {t('auth.login.passwordLabel')}
                   </label>
                   <input
                     type="password"
@@ -150,7 +147,7 @@ export default function Login() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
                                focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
                                bg-white text-gray-900 placeholder-gray-400"
-                    placeholder="Masukkan password"
+                    placeholder={t('auth.login.passwordPlaceholder')}
                   />
                 </div>
                 {error && (
@@ -164,28 +161,26 @@ export default function Login() {
                   className="w-full bg-[#19C853] hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed
                              text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
                 >
-                  {loading ? 'Memproses...' : 'Masuk'}
+                  {loading ? t('auth.login.submitting') : t('auth.login.submitButton')}
                 </button>
                 <div className="text-center space-y-1">
                   <Link to="/forgot-password" className="block text-sm text-slate-500 hover:text-slate-700 underline">
-                    Lupa password?
+                    {t('auth.login.forgotPassword')}
                   </Link>
                   <Link to="/register" className="block text-sm text-green-700 hover:text-green-900 underline">
-                    Daftar perusahaan baru
+                    {t('auth.login.registerLink')}
                   </Link>
                 </div>
               </form>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-gray-800 mb-1">Verifikasi Perangkat</h1>
-              <p className="text-sm text-gray-500 mb-8">
-                Kode verifikasi 6 digit telah dikirim ke email Anda. Masukkan kode tersebut untuk melanjutkan.
-              </p>
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">{t('auth.otp.title')}</h1>
+              <p className="text-sm text-gray-500 mb-8">{t('auth.otp.subtitle')}</p>
               <form onSubmit={handleVerifyOtp} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Kode Verifikasi
+                    {t('auth.otp.codeLabel')}
                   </label>
                   <input
                     type="text"
@@ -213,7 +208,7 @@ export default function Login() {
                   className="w-full bg-[#19C853] hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed
                              text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
                 >
-                  {loading ? 'Memverifikasi...' : 'Verifikasi'}
+                  {loading ? t('auth.otp.verifying') : t('auth.otp.verifyButton')}
                 </button>
                 <div className="text-center">
                   <button
@@ -221,7 +216,7 @@ export default function Login() {
                     onClick={handleResendOtp}
                     className="text-sm text-green-700 hover:text-green-900 underline"
                   >
-                    Kirim ulang kode
+                    {t('auth.otp.resendButton')}
                   </button>
                   <span className="mx-2 text-gray-300">·</span>
                   <button
@@ -229,7 +224,7 @@ export default function Login() {
                     onClick={() => { setStep('credentials'); setError(''); setOtp(''); }}
                     className="text-sm text-gray-500 hover:text-gray-700 underline"
                   >
-                    Kembali
+                    {t('auth.otp.backButton')}
                   </button>
                 </div>
               </form>

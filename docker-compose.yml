@@ -58,11 +58,27 @@ services:
       - EMAIL_FROM=${EMAIL_FROM:-}
       - DEVICE_TOKEN_EXPIRE_DAYS=${DEVICE_TOKEN_EXPIRE_DAYS:-90}
       - ENVIRONMENT=${ENVIRONMENT:-development}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-CanopySense}
+      - MAIL_BLOCK_DUMMY_DOMAINS=${MAIL_BLOCK_DUMMY_DOMAINS:-true}
+      - MAIL_MODE=${MAIL_MODE:-smtp}
+      - MAIL_SANDBOX_HOST=mailpit
+      - MAIL_SANDBOX_PORT=${MAIL_SANDBOX_PORT:-1025}
+      - SUPERADMIN_NOTIFY_EMAIL=${SUPERADMIN_NOTIFY_EMAIL:-}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+      mailpit:
+        condition: service_started
+    networks:
+      - canopy_internal
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     networks:
       - canopy_internal
 

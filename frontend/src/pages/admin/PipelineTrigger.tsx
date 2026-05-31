@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import {
   listCompanies,
@@ -21,6 +22,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function PipelineTrigger() {
+  const { t } = useTranslation();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [estates, setEstates] = useState<PipelineEstate[]>([]);
   const [afdelings, setAfdelings] = useState<PipelineAfdeling[]>([]);
@@ -149,7 +151,7 @@ export default function PipelineTrigger() {
             </div>
           )}
           {polling && (
-            <p className="text-xs text-slate-400">Polling for updates every 8 seconds…</p>
+            <p className="text-xs text-slate-400">{t('admin.pipeline.polling')}</p>
           )}
         </div>
         <button
@@ -164,7 +166,7 @@ export default function PipelineTrigger() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-2xl">
-      <h1 className="text-xl font-bold text-slate-800 mb-2">Trigger Pipeline Run</h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-2">{t('admin.pipeline.triggerTitle')}</h1>
       <p className="text-sm text-slate-500 mb-6">
         Manually start an approved pipeline operation for a company estate.
         Only <strong>scheduled</strong> (weekly update) and <strong>backfill</strong> (historical) modes are available.

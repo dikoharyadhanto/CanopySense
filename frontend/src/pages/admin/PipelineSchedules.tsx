@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import {
   listCompanies,
@@ -15,6 +16,7 @@ const CADENCES = ['daily', 'weekly', 'monthly'];
 const MODES = ['scheduled', 'backfill'];
 
 export default function PipelineSchedules() {
+  const { t } = useTranslation();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [schedules, setSchedules] = useState<PipelineSchedule[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export default function PipelineSchedules() {
     <div className="flex-1 overflow-y-auto p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">Pipeline Schedules</h1>
+          <h1 className="text-xl font-bold text-slate-800">{t('admin.pipeline.schedulesTitle')}</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Schedules fire while the server is running (staging scheduler).
             {!isSuperAdmin && ' View only — schedule management requires super-admin.'}
@@ -137,10 +139,10 @@ export default function PipelineSchedules() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-slate-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-slate-400 text-sm">{t('admin.pipeline.loading')}</td></tr>
             )}
             {!loading && schedules.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-slate-400 text-sm">No schedules configured.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-slate-400 text-sm">{t('admin.pipeline.noSchedules')}</td></tr>
             )}
             {!loading && schedules.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50">

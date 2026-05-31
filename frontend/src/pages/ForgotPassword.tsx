@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,9 +29,9 @@ export default function ForgotPassword() {
           <div className="w-10 h-10 rounded-xl bg-[#19C853] flex items-center justify-center text-white text-lg font-bold mx-auto mb-3">
             C
           </div>
-          <h1 className="text-lg font-bold text-slate-800">Lupa Password</h1>
+          <h1 className="text-lg font-bold text-slate-800">{t('auth.forgotPassword.title')}</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Masukkan email terdaftar Anda. Kami akan mengirimkan tautan reset password.
+            {t('auth.forgotPassword.subtitle')}
           </p>
         </div>
 
@@ -37,22 +39,24 @@ export default function ForgotPassword() {
           <div className="text-center">
             <div className="text-green-600 text-3xl mb-3">✓</div>
             <p className="text-sm text-slate-700 mb-5">
-              Jika email tersebut terdaftar, tautan reset password telah dikirimkan. Periksa kotak masuk Anda.
+              {t('auth.forgotPassword.successMessage')}
             </p>
             <Link to="/login" className="text-sm text-green-700 hover:text-green-900 underline">
-              Kembali ke login
+              {t('auth.forgotPassword.backToLogin')}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm text-slate-600 mb-1">Email</label>
+              <label className="block text-sm text-slate-600 mb-1">
+                {t('auth.forgotPassword.emailLabel')}
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="nama@perusahaan.com"
+                placeholder={t('auth.forgotPassword.emailPlaceholder')}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
@@ -61,11 +65,11 @@ export default function ForgotPassword() {
               disabled={loading}
               className="w-full bg-[#19C853] hover:bg-green-500 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
             >
-              {loading ? 'Mengirim...' : 'Kirim Tautan Reset'}
+              {loading ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.submitButton')}
             </button>
             <div className="text-center">
               <Link to="/login" className="text-sm text-slate-500 hover:text-slate-700 underline">
-                Kembali ke login
+                {t('auth.forgotPassword.backToLogin')}
               </Link>
             </div>
           </form>

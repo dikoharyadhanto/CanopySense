@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import {
   getDataViewerCatalog,
@@ -11,6 +12,7 @@ import {
 const PAGE_SIZE = 20;
 
 export default function DataViewer() {
+  const { t } = useTranslation();
   const [tables, setTables] = useState<DataViewerTable[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [columnMeta, setColumnMeta] = useState<DataViewerColumnMeta | null>(null);
@@ -116,8 +118,8 @@ export default function DataViewer() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 bg-white">
-        <h1 className="text-lg font-semibold text-slate-800">Data Viewer</h1>
-        <p className="text-xs text-slate-500 mt-0.5">Read-only inspection of Phase 1 operational tables. Super-admin only.</p>
+        <h1 className="text-lg font-semibold text-slate-800">{t('admin.dataViewer.title')}</h1>
+        <p className="text-xs text-slate-500 mt-0.5">{t('admin.dataViewer.subtitle')}</p>
       </div>
 
       <div className="flex flex-1 overflow-hidden">

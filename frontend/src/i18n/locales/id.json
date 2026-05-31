@@ -1,0 +1,553 @@
+{
+  "common": {
+    "loading": "Memuat...",
+    "save": "Simpan",
+    "saving": "Menyimpan...",
+    "cancel": "Batal",
+    "close": "Tutup",
+    "delete": "Hapus",
+    "search": "Cari",
+    "submit": "Kirim",
+    "approve": "Setujui",
+    "reject": "Tolak",
+    "all": "Semua",
+    "optional": "(opsional)",
+    "error": {
+      "generic": "Terjadi kesalahan. Silakan coba lagi.",
+      "failedLoad": "Gagal memuat data."
+    }
+  },
+  "glossary": {
+    "company": "Perusahaan",
+    "estate": "Estate",
+    "afdeling": "Afdeling",
+    "block": "Blok",
+    "pipeline": "Pipeline",
+    "manager": "Manager",
+    "viewer": "Viewer",
+    "admin": "Admin"
+  },
+  "navigation": {
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "exploreMap": "Explore Map",
+      "timeSeries": "Time-Series Analyzer",
+      "comingSoon": "Segera Hadir",
+      "phase2Label": "Fase 2",
+      "backToAdmin": "← Admin Panel",
+      "phase2Items": {
+        "longTermTrends": "Long-Term Trends",
+        "modelStudio": "Model Studio",
+        "alertsTasking": "Alerts & Tasking",
+        "reportsExport": "Reports & Export"
+      }
+    },
+    "admin": {
+      "management": "Management",
+      "pipeline": "Pipeline",
+      "data": "Data",
+      "superAdmin": "Super Admin",
+      "backToDashboard": "← Back to Dashboard",
+      "dashboard": "Dashboard",
+      "companies": "Companies",
+      "auditLog": "Audit Log",
+      "triggerRun": "Trigger Run",
+      "runHistory": "Run History",
+      "schedules": "Schedules",
+      "estateOnboarding": "Estate Onboarding",
+      "adminUsers": "Admin Users",
+      "dataViewer": "Data Viewer",
+      "estateChange": "Estate Change",
+      "registrations": "Registrations",
+      "systemSettings": "System Settings"
+    }
+  },
+  "auth": {
+    "passwordHint": "Min. 12 karakter · huruf besar · huruf kecil · angka atau simbol",
+    "login": {
+      "title": "Masuk",
+      "subtitle": "Masuk ke Manager Portal untuk melanjutkan.",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Masukkan username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Masukkan password",
+      "submitButton": "Masuk",
+      "submitting": "Memproses...",
+      "errorInvalid": "Username atau password salah. Silakan coba lagi.",
+      "forgotPassword": "Lupa password?",
+      "registerLink": "Daftar perusahaan baru"
+    },
+    "otp": {
+      "title": "Verifikasi Perangkat",
+      "subtitle": "Kode verifikasi 6 digit telah dikirim ke email Anda. Masukkan kode tersebut untuk melanjutkan.",
+      "codeLabel": "Kode Verifikasi",
+      "verifyButton": "Verifikasi",
+      "verifying": "Memverifikasi...",
+      "resendButton": "Kirim ulang kode",
+      "backButton": "Kembali",
+      "errorInvalid": "Kode verifikasi salah atau kadaluarsa. Silakan coba lagi.",
+      "errorResend": "Gagal mengirim ulang kode. Coba lagi dalam beberapa saat."
+    },
+    "brandPanel": {
+      "tagline": "Data satelit real-time untuk perkebunan yang lebih cerdas.",
+      "description": "Pantau kesehatan kanopi, tren indeks vegetasi, dan status blok estate Anda langsung dari citra satelit terkini.",
+      "version": "CanopySense v1.5 · Phase 1 Manager Portal"
+    },
+    "forgotPassword": {
+      "title": "Lupa Password",
+      "subtitle": "Masukkan email terdaftar Anda. Kami akan mengirimkan tautan reset password.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "nama@perusahaan.com",
+      "submitButton": "Kirim Tautan Reset",
+      "submitting": "Mengirim...",
+      "successMessage": "Jika email tersebut terdaftar, tautan reset password telah dikirimkan. Periksa kotak masuk Anda.",
+      "backToLogin": "Kembali ke login"
+    },
+    "resetPassword": {
+      "title": "Buat Password Baru",
+      "newPasswordLabel": "Password Baru",
+      "confirmPasswordLabel": "Konfirmasi Password",
+      "submitButton": "Simpan Password Baru",
+      "submitting": "Menyimpan...",
+      "successTitle": "Password Berhasil Diubah",
+      "successMessage": "Anda sekarang dapat masuk dengan password baru Anda.",
+      "goToLoginButton": "Ke Halaman Login",
+      "invalidToken": "Tautan reset tidak valid. Silakan minta reset password baru.",
+      "errorMismatch": "Password dan konfirmasi tidak cocok.",
+      "errorExpired": "Token tidak valid atau sudah kadaluarsa."
+    },
+    "setupAccount": {
+      "title": "Lengkapi Akun Anda",
+      "subtitle": "Buat username dan password untuk mengaktifkan akun CanopySense Anda.",
+      "setupTokenLabel": "Setup Token",
+      "setupTokenPlaceholder": "Token dari admin",
+      "usernameLabel": "Username",
+      "fullNameLabel": "Nama Lengkap",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Konfirmasi Password",
+      "submitButton": "Aktifkan Akun",
+      "submitting": "Menyimpan...",
+      "successTitle": "Akun Siap Digunakan",
+      "successMessage": "Kredensial Anda telah disimpan. Silakan masuk dengan username dan password baru.",
+      "goToLoginButton": "Masuk ke Akun",
+      "errorMismatch": "Password dan konfirmasi tidak cocok",
+      "errorPolicy": "Password harus minimal 12 karakter, mengandung huruf besar, huruf kecil, dan angka atau karakter spesial",
+      "errorExpired": "Setup gagal. Token mungkin tidak valid atau sudah kadaluarsa."
+    },
+    "register": {
+      "title": "Daftar Perusahaan",
+      "subtitle": "Isi formulir di bawah untuk mendaftarkan perusahaan Anda. Administrator akan meninjau pendaftaran Anda.",
+      "tagline": "Daftarkan Perusahaan Anda",
+      "companyNameLabel": "Nama Perusahaan",
+      "companyNamePlaceholder": "PT. Contoh Perkebunan",
+      "contactNameLabel": "Nama Kontak",
+      "contactNamePlaceholder": "Nama lengkap",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@perusahaan.com",
+      "phoneLabel": "Nomor Telepon",
+      "phonePlaceholder": "+62...",
+      "submitButton": "Kirim Pendaftaran",
+      "submitting": "Mengirim...",
+      "successTitle": "Pendaftaran Terkirim",
+      "successMessage": "Pendaftaran Anda sedang ditinjau oleh administrator. Anda akan mendapat email konfirmasi setelah diproses.",
+      "backToLogin": "Sudah punya akun? Masuk",
+      "errorGeneric": "Gagal mengirim pendaftaran. Coba lagi."
+    },
+    "acceptInvite": {
+      "title": "Undangan CanopySense",
+      "subtitle": "Anda telah diundang untuk bergabung sebagai viewer. Klik tombol di bawah untuk menerima undangan.",
+      "acceptButton": "Terima Undangan",
+      "accepting": "Memproses...",
+      "successTitle": "Undangan Diterima",
+      "successMessage": "Anda telah bergabung dengan {{companyName}}.",
+      "goToLoginButton": "Masuk ke Akun",
+      "invalidToken": "Tautan undangan tidak valid.",
+      "errorExpired": "Token tidak valid atau sudah kadaluarsa."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard Executive",
+    "subtitle": "Monitoring real-time kesehatan kanopi perkebunan karet",
+    "dataLabel": "Data:",
+    "loading": "Memuat data blok...",
+    "errorLoad": "Gagal memuat data blok. Periksa koneksi ke backend.",
+    "stats": {
+      "avgNdvi": "Avg NDVI Estate",
+      "indexCoverage": "Index Coverage",
+      "lastAcquisition": "Akuisisi Terakhir",
+      "totalBlocks": "Total Blok",
+      "latestDateSub": "tanggal data terbaru",
+      "blocksWithData": "dari {{count}} blok",
+      "blockCountSub": "blok di estate ini",
+      "blocksWithDataLabel": "blok berdata"
+    },
+    "ndvi": {
+      "good": "↑ Baik",
+      "medium": "→ Sedang",
+      "low": "↓ Rendah",
+      "complete": "✓ Lengkap"
+    },
+    "blockDetail": {
+      "title": "Detail Blok",
+      "closeAriaLabel": "Tutup detail blok",
+      "name": "Nama:",
+      "code": "Kode:",
+      "afdeling": "Afdeling:",
+      "estate": "Estate:",
+      "latestIndices": "Indeks Terbaru",
+      "date": "Tanggal:",
+      "cloud": "Cloud:",
+      "viewTimeSeriesButton": "Lihat Time-Series →"
+    },
+    "topBlocks": {
+      "panelTitle": "Top Blok — {{index}}",
+      "viewAllButton": "Lihat Semua Blok →"
+    }
+  },
+  "exploreMap": {
+    "prevFrameAriaLabel": "Frame sebelumnya",
+    "selectFrameAriaLabel": "Pilih frame timelapse",
+    "nextFrameAriaLabel": "Frame berikutnya",
+    "metaDate": "Tanggal citra",
+    "metaSensor": "Sensor",
+    "metaResolution": "Resolusi",
+    "metaValidPixels": "Piksel valid",
+    "metaCreated": "Dibuat",
+    "noData": "Tidak ada data"
+  },
+  "indexSelector": {
+    "label": "Index:"
+  },
+  "emptyState": {
+    "title": "Belum Terhubung ke Perusahaan",
+    "description": "Anda belum terhubung ke perusahaan manapun. Tunggu undangan dari Manager perusahaan Anda. Tautan undangan akan dikirimkan ke email Anda.",
+    "logoutButton": "Keluar"
+  },
+  "unavailable": {
+    "pageTitle": "Fitur Fase 2",
+    "pageSubtitle": "Belum tersedia di Phase 1",
+    "title": "Fitur Belum Tersedia",
+    "description": "Fitur ini direncanakan untuk Phase 2 dan akan diaktifkan pada tahap pengembangan berikutnya.",
+    "backButton": "← Kembali ke Dashboard"
+  },
+  "profile": {
+    "pageTitle": "Profil Saya",
+    "tabs": {
+      "profile": "Kelola Profil",
+      "members": "Kelola Anggota"
+    },
+    "accountInfo": {
+      "sectionTitle": "Informasi Akun",
+      "fullNameLabel": "Nama Lengkap",
+      "usernameLabel": "Username",
+      "emailLabel": "Email",
+      "roleLabel": "Role:",
+      "companyConnected": "Akun ini terhubung dengan {{companyName}}",
+      "companyNotConnected": "Akun ini belum terhubung ke perusahaan manapun",
+      "saveButton": "Simpan Perubahan",
+      "saving": "Menyimpan...",
+      "successSave": "Profil berhasil diperbarui.",
+      "errorSave": "Gagal menyimpan profil.",
+      "loadingProfile": "Memuat profil..."
+    },
+    "changePassword": {
+      "sectionTitle": "Ganti Password",
+      "currentPasswordLabel": "Password Saat Ini",
+      "newPasswordLabel": "Password Baru",
+      "confirmPasswordLabel": "Konfirmasi Password Baru",
+      "submitButton": "Ubah Password",
+      "saving": "Menyimpan...",
+      "successChange": "Password berhasil diubah.",
+      "errorMismatch": "Password baru dan konfirmasi tidak cocok.",
+      "errorSave": "Gagal mengubah password."
+    },
+    "members": {
+      "inviteSection": "Undang Viewer",
+      "invitePlaceholder": "email@contoh.com",
+      "inviteButton": "Kirim Undangan",
+      "inviting": "Mengirim...",
+      "inviteSuccess": "Undangan dikirim ke {{email}}.",
+      "inviteError": "Gagal mengirim undangan.",
+      "membersSection": "Daftar Anggota",
+      "loading": "Memuat...",
+      "errorLoad": "Gagal memuat daftar anggota.",
+      "noMembers": "Belum ada anggota.",
+      "table": {
+        "name": "Nama",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status"
+      },
+      "approveLeave": "Approve Leave",
+      "rejectLeave": "Reject",
+      "removeButton": "Hapus",
+      "confirmRemove": "Hapus anggota ini dari perusahaan?",
+      "errorRemove": "Gagal menghapus anggota.",
+      "errorLeaveAction": "Gagal memproses permintaan."
+    }
+  },
+  "settings": {
+    "pageTitle": "Pengaturan",
+    "managerOnly": "Halaman ini hanya tersedia untuk Manager.",
+    "noCompany": "Perusahaan tidak ditemukan.",
+    "tabs": {
+      "branding": "Branding & Header",
+      "estate": "Perubahan Estate",
+      "notifications": "Notifikasi"
+    },
+    "branding": {
+      "companyNameSection": "Nama Perusahaan",
+      "companyNamePlaceholder": "Nama perusahaan",
+      "saveButton": "Simpan",
+      "saving": "Menyimpan...",
+      "logoSection": "Logo Perusahaan",
+      "logoAlt": "Logo",
+      "deleteLogoButton": "Hapus logo",
+      "confirmDeleteLogo": "Hapus logo perusahaan?",
+      "logoUploading": "Mengunggah...",
+      "logoGuidelines": "Panduan logo:",
+      "logoGuidelineFormat": "Format: PNG (disarankan), JPEG, atau SVG",
+      "logoGuidelineSize": "Ukuran maks. file: 2 MB",
+      "logoGuidelineResize": "Akan otomatis diubah ukurannya menjadi maks. 200 × 48 px",
+      "logoGuidelineTransparent": "Gunakan PNG dengan latar belakang transparan agar tampil rapi di header",
+      "logoGuidelineText": "Hindari logo dengan teks kecil — akan terlihat buram setelah dikecilkan",
+      "headerVisibilitySection": "Tampilan Header",
+      "showNameInHeader": "Tampilkan nama perusahaan di header",
+      "showLogoInHeader": "Tampilkan logo perusahaan di header",
+      "nameSaved": "Nama perusahaan disimpan.",
+      "logoUploaded": "Logo berhasil diunggah.",
+      "logoDeleted": "Logo dihapus.",
+      "errorSaveName": "Gagal menyimpan.",
+      "errorUploadLogo": "Gagal mengunggah logo.",
+      "errorDeleteLogo": "Gagal menghapus logo.",
+      "errorToggleHeader": "Gagal menyimpan pengaturan."
+    },
+    "estate": {
+      "sectionTitle": "Perubahan Data Estate",
+      "currentStatus": "Status saat ini:",
+      "status": {
+        "none": "—",
+        "pending": "Menunggu Review",
+        "approved": "Disetujui",
+        "rejected": "Ditolak"
+      },
+      "rejectReason": "Alasan penolakan:",
+      "fileFormat": "Format: GeoJSON, SHP zip, KML, atau KMZ. Maks. 10 MB.",
+      "submitButton": "Ajukan Perubahan Estate",
+      "uploading": "Mengunggah...",
+      "cancelButton": "Batalkan Permintaan",
+      "confirmCancel": "Batalkan permintaan perubahan estate?",
+      "warningTitle": "Peringatan",
+      "warningMessage": "Semua data estate yang ada akan digantikan. Tindakan ini tidak dapat dibatalkan setelah disetujui.",
+      "warningCancelButton": "Batal",
+      "warningContinueButton": "Lanjutkan",
+      "successSubmit": "Permintaan perubahan estate berhasil dikirim.",
+      "successCancel": "Permintaan dibatalkan.",
+      "errorSubmit": "Gagal mengirim permintaan.",
+      "errorCancel": "Gagal membatalkan."
+    },
+    "notifications": {
+      "sectionTitle": "Notifikasi & Zona Waktu",
+      "timezoneLabel": "Zona Waktu",
+      "notifyFailure": "Notifikasi ketika pipeline gagal",
+      "notifySuccess": "Notifikasi ketika pipeline berhasil",
+      "saveButton": "Simpan",
+      "saving": "Menyimpan...",
+      "successSave": "Pengaturan notifikasi disimpan.",
+      "errorSave": "Gagal menyimpan."
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "companies": "Companies",
+      "activeManagers": "Active Managers",
+      "subscriptions": "Subscriptions",
+      "noData": "No data",
+      "recentActions": "Recent Admin Actions",
+      "noRecentActions": "No recent actions",
+      "table": {
+        "actor": "Actor",
+        "action": "Action",
+        "target": "Target",
+        "time": "Time"
+      },
+      "loading": "Loading...",
+      "errorLoad": "Failed to load dashboard data"
+    },
+    "companies": {
+      "title": "Companies ({{count}})",
+      "newButton": "+ New Company",
+      "searchPlaceholder": "Search by name...",
+      "searchButton": "Search",
+      "createModal": {
+        "title": "Create Company",
+        "nameLabel": "Company Name",
+        "cancelButton": "Cancel",
+        "createButton": "Create",
+        "creating": "Creating...",
+        "errorCreate": "Failed to create company"
+      },
+      "table": {
+        "id": "ID",
+        "name": "Company Name",
+        "uuid": "UUID",
+        "created": "Created",
+        "viewButton": "View →",
+        "noCompanies": "No companies found"
+      },
+      "loading": "Loading...",
+      "errorLoad": "Failed to load companies"
+    },
+    "estateChange": {
+      "title": "Permintaan Perubahan Estate",
+      "filter": {
+        "all": "Semua",
+        "pending": "Menunggu",
+        "approved": "Disetujui",
+        "rejected": "Ditolak"
+      },
+      "table": {
+        "company": "Perusahaan",
+        "status": "Status",
+        "submittedAt": "Diajukan",
+        "actions": "Aksi"
+      },
+      "previewButton": "Preview",
+      "previewLoading": "Memuat...",
+      "approveButton": "Setujui",
+      "rejectButton": "Tolak",
+      "confirmApprove": "Setujui perubahan estate ini? Data lama akan diarsipkan.",
+      "successApprove": "Perubahan estate disetujui.",
+      "errorApprove": "Gagal menyetujui.",
+      "successReject": "Permintaan ditolak.",
+      "errorReject": "Gagal menolak.",
+      "rejectModal": {
+        "title": "Tolak Permintaan",
+        "reasonPlaceholder": "Alasan penolakan...",
+        "cancelButton": "Batal",
+        "confirmButton": "Tolak",
+        "errorEmptyReason": "Alasan penolakan harus diisi."
+      },
+      "preview": {
+        "title": "Preview GeoJSON (Company #{{companyId}})",
+        "closeButton": "Tutup",
+        "noFeatures": "Tidak ada fitur geometri untuk ditampilkan.",
+        "errorLoad": "Gagal memuat preview."
+      },
+      "loading": "Memuat...",
+      "noItems": "Tidak ada permintaan.",
+      "rejectReason": "Alasan:"
+    },
+    "registrations": {
+      "title": "Pendaftaran Perusahaan",
+      "filter": {
+        "all": "Semua",
+        "pending": "Menunggu",
+        "approved": "Disetujui",
+        "rejected": "Ditolak"
+      },
+      "table": {
+        "company": "Perusahaan",
+        "contact": "Kontak",
+        "email": "Email",
+        "status": "Status",
+        "submittedAt": "Diajukan",
+        "actions": "Aksi"
+      },
+      "approveButton": "Setujui",
+      "rejectButton": "Tolak",
+      "confirmApprove": "Setujui pendaftaran ini? Perusahaan dan akun manager akan dibuat.",
+      "successApprove": "Pendaftaran disetujui. Email setup dikirim ke pemohon.",
+      "errorApprove": "Gagal menyetujui.",
+      "successReject": "Pendaftaran ditolak.",
+      "errorReject": "Gagal menolak.",
+      "rejectModal": {
+        "title": "Tolak Pendaftaran",
+        "reasonPlaceholder": "Alasan penolakan...",
+        "cancelButton": "Batal",
+        "confirmButton": "Tolak",
+        "errorEmptyReason": "Alasan penolakan harus diisi."
+      },
+      "loading": "Memuat...",
+      "noItems": "Tidak ada pendaftaran.",
+      "rejectReason": "Alasan:"
+    },
+    "pipeline": {
+      "status": "Pipeline Run Status",
+      "triggerTitle": "Trigger Pipeline Run",
+      "historyTitle": "Pipeline Run History",
+      "schedulesTitle": "Pipeline Schedules",
+      "fields": {
+        "mode": "Mode",
+        "company": "Company",
+        "estate": "Estate",
+        "afdelingId": "Afdeling ID",
+        "estateId": "Estate ID",
+        "dateRange": "Date range",
+        "dateStart": "Date Start (YYYY-MM)",
+        "dateEnd": "Date End (YYYY-MM)",
+        "elapsed": "Elapsed",
+        "status": "Status",
+        "scope": "Scope",
+        "actor": "Actor",
+        "started": "Started",
+        "duration": "Duration",
+        "runId": "Run ID",
+        "cadence": "Cadence",
+        "timezone": "Timezone",
+        "nextRun": "Next Run",
+        "lastRun": "Last Run",
+        "createdBy": "Created By",
+        "actions": "Actions"
+      },
+      "confirmTitle": "Confirm Pipeline Trigger",
+      "loading": "Loading…",
+      "polling": "Polling for updates every 8 seconds…",
+      "noRuns": "No runs yet.",
+      "noSchedules": "No schedules configured.",
+      "newSchedule": "New Pipeline Schedule"
+    },
+    "dataViewer": {
+      "title": "Data Viewer",
+      "subtitle": "Read-only inspection of Phase 1 operational tables. Super-admin only.",
+      "loading": "Loading…",
+      "noTables": "No tables available.",
+      "tableLoading": "Loading..."
+    },
+    "subscriptionEdit": {
+      "title": "Edit Subscription",
+      "fields": {
+        "tier": "Tier",
+        "status": "Status",
+        "billingInterval": "Billing Interval",
+        "rasterMode": "Raster Serving Mode",
+        "timelapseEnabled": "Timelapse Enabled",
+        "timelapsePeriod": "Timelapse Period (months)",
+        "startDate": "Subscription Start",
+        "endDate": "Subscription End"
+      },
+      "successSave": "Saved successfully."
+    }
+  },
+  "status": {
+    "notProcessed": "Belum Diproses",
+    "processing": "Sedang Diproses",
+    "available": "Tersedia",
+    "noNewData": "Tidak Ada Data Baru",
+    "skippedExisting": "Dilewati (Sudah Ada)",
+    "failed": "Gagal",
+    "partialSuccess": "Sebagian Berhasil",
+    "pendingReview": "Menunggu Review",
+    "approved": "Disetujui",
+    "rejected": "Ditolak",
+    "active": "Aktif",
+    "inactive": "Tidak Aktif"
+  },
+  "error": {
+    "generic": "Terjadi kesalahan. Silakan coba lagi.",
+    "failedToLoad": "Gagal memuat data.",
+    "unauthorized": "Anda tidak memiliki akses ke halaman ini.",
+    "notFound": "Halaman tidak ditemukan."
+  }
+}

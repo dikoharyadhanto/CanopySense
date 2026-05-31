@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
@@ -14,6 +15,7 @@ const INDEX_TOGGLES = [
 type ToggleKey = typeof INDEX_TOGGLES[number]['key'];
 
 export default function TimeSeries() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialBlockId = searchParams.get('block_id') ? Number(searchParams.get('block_id')) : null;
@@ -66,7 +68,7 @@ export default function TimeSeries() {
           </button>
           <span className="text-gray-300">|</span>
           <div>
-            <h1 className="text-base font-bold text-gray-800 leading-tight">Time-Series Analyzer</h1>
+            <h1 className="text-base font-bold text-gray-800 leading-tight">{t('navigation.sidebar.timeSeries')}</h1>
             <p className="text-xs text-gray-500">Tren indeks vegetasi per blok dari data satelit historis</p>
           </div>
         </div>

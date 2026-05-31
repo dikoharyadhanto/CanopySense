@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
-import { PASSWORD_RE, PASSWORD_HINT } from '../lib/passwordPolicy';
+import { PASSWORD_RE, PASSWORD_HINT_KEY } from '../lib/passwordPolicy';
 
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -17,10 +18,10 @@ function EyeIcon({ open }: { open: boolean }) {
 }
 
 export default function SetupAccount() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Token can be pre-filled from URL ?token=... (admin sends link with token)
   const [token, setToken] = useState(searchParams.get('token') ?? '');
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
@@ -35,11 +36,11 @@ export default function SetupAccount() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) {
-      setError('Password dan konfirmasi tidak cocok');
+      setError(t('auth.setupAccount.errorMismatch'));
       return;
     }
     if (!PASSWORD_RE.test(password)) {
-      setError('Password harus minimal 12 karakter, mengandung huruf besar, huruf kecil, dan angka atau karakter spesial');
+      setError(t('auth.setupAccount.errorPolicy'));
       return;
     }
     setSubmitting(true);
@@ -53,7 +54,7 @@ export default function SetupAccount() {
       });
       setDone(true);
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Setup failed. Token may be invalid or expired.');
+      setError(err?.response?.data?.detail ?? t('auth.setupAccount.errorExpired'));
     } finally {
       setSubmitting(false);
     }
@@ -64,15 +65,13 @@ export default function SetupAccount() {
       <div className="min-h-screen bg-[#F4FAF6] flex items-center justify-center px-4">
         <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-sm text-center">
           <div className="text-green-600 text-3xl mb-3">✓</div>
-          <h1 className="text-lg font-bold text-slate-800 mb-2">Akun Siap Digunakan</h1>
-          <p className="text-sm text-slate-500 mb-5">
-            Kredensial Anda telah disimpan. Silakan masuk dengan username dan password baru.
-          </p>
+          <h1 className="text-lg font-bold text-slate-800 mb-2">{t('auth.setupAccount.successTitle')}</h1>
+          <p className="text-sm text-slate-500 mb-5">{t('auth.setupAccount.successMessage')}</p>
           <button
             onClick={() => navigate('/login')}
             className="w-full py-2 bg-[#19C853] text-white text-sm rounded-lg hover:bg-green-500 font-semibold"
           >
-            Masuk ke Akun
+            {t('auth.setupAccount.goToLoginButton')}
           </button>
         </div>
       </div>
@@ -87,28 +86,30 @@ export default function SetupAccount() {
                           text-white text-lg font-bold mx-auto mb-3">
             C
           </div>
-          <h1 className="text-lg font-bold text-slate-800">Lengkapi Akun Anda</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Buat username dan password untuk mengaktifkan akun CanopySense Anda.
-          </p>
+          <h1 className="text-lg font-bold text-slate-800">{t('auth.setupAccount.title')}</h1>
+          <p className="text-xs text-slate-500 mt-1">{t('auth.setupAccount.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!searchParams.get('token') && (
             <div>
-              <label className="block text-sm text-slate-600 mb-1">Setup Token</label>
+              <label className="block text-sm text-slate-600 mb-1">
+                {t('auth.setupAccount.setupTokenLabel')}
+              </label>
               <input
                 type="text"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 required
-                placeholder="Token dari admin"
+                placeholder={t('auth.setupAccount.setupTokenPlaceholder')}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-mono"
               />
             </div>
           )}
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Username</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              {t('auth.setupAccount.usernameLabel')}
+            </label>
             <input
               type="text"
               value={username}
@@ -118,7 +119,9 @@ export default function SetupAccount() {
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Nama Lengkap</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              {t('auth.setupAccount.fullNameLabel')}
+            </label>
             <input
               type="text"
               value={fullName}
@@ -128,7 +131,9 @@ export default function SetupAccount() {
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Password</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              {t('auth.setupAccount.passwordLabel')}
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -146,10 +151,12 @@ export default function SetupAccount() {
                 <EyeIcon open={showPassword} />
               </button>
             </div>
-            <p className="text-xs text-slate-400 mt-1">{PASSWORD_HINT}</p>
+            <p className="text-xs text-slate-400 mt-1">{t(PASSWORD_HINT_KEY)}</p>
           </div>
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Konfirmasi Password</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              {t('auth.setupAccount.confirmPasswordLabel')}
+            </label>
             <div className="relative">
               <input
                 type={showConfirm ? 'text' : 'password'}
@@ -174,7 +181,7 @@ export default function SetupAccount() {
             disabled={submitting}
             className="w-full py-2.5 bg-[#19C853] hover:bg-green-500 disabled:opacity-60 text-white text-sm rounded-lg font-semibold transition-colors mt-2"
           >
-            {submitting ? 'Menyimpan...' : 'Aktifkan Akun'}
+            {submitting ? t('auth.setupAccount.submitting') : t('auth.setupAccount.submitButton')}
           </button>
         </form>
       </div>

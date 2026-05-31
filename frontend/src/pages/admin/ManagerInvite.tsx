@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createManager } from '../../lib/adminApi';
@@ -20,6 +21,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function ManagerInvite() {
+  const { t } = useTranslation();
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
 
@@ -81,7 +83,7 @@ export default function ManagerInvite() {
       >
         ← Back to Company
       </button>
-      <h1 className="text-xl font-bold text-slate-800 mb-6">Invite Manager</h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-6">{t('navigation.admin.adminUsers')}</h1>
       <p className="text-sm text-slate-500 mb-4">
         Enter the manager's email. They will set their own name, username, and password using the
         setup token shown after creation.

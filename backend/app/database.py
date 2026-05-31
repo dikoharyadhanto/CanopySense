@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     SUPERADMIN_NOTIFY_EMAIL: str = ""
     ARCHIVE_RETENTION_DAYS: int = 30
     APP_VERSION: str = "1.0.0"
+    # Email sending infrastructure (Stage 1.18)
+    MAIL_FROM_NAME: str = "CanopySense"
+    MAIL_BLOCK_DUMMY_DOMAINS: bool = True
+    MAIL_MODE: str = "smtp"
+    MAIL_SANDBOX_HOST: str = "mailpit"
+    MAIL_SANDBOX_PORT: int = 1025
 
     class Config:
         env_file = ".env"

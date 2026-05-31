@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api, { API_BASE } from '../lib/api';
 import { getStoredUser, clearToken } from '../lib/auth';
 
-const PHASE1_NAV = [
-  { to: '/dashboard',    label: 'Dashboard' },
-  { to: '/explore-map',  label: 'Explore Map' },
-  { to: '/timeseries',   label: 'Time-Series Analyzer' },
+const PHASE1_NAV_KEYS = [
+  { to: '/dashboard',   labelKey: 'navigation.sidebar.dashboard' },
+  { to: '/explore-map', labelKey: 'navigation.sidebar.exploreMap' },
+  { to: '/timeseries',  labelKey: 'navigation.sidebar.timeSeries' },
 ];
 
-const PHASE2_NAV = [
-  'Long-Term Trends',
-  'Model Studio',
-  'Alerts & Tasking',
-  'Reports & Export',
+const PHASE2_NAV_KEYS = [
+  'navigation.sidebar.phase2Items.longTermTrends',
+  'navigation.sidebar.phase2Items.modelStudio',
+  'navigation.sidebar.phase2Items.alertsTasking',
+  'navigation.sidebar.phase2Items.reportsExport',
 ];
 
 function Initials({ name }: { name: string }) {
@@ -38,6 +39,7 @@ interface Branding {
 }
 
 export default function Layout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = getStoredUser();
   const [branding, setBranding] = useState<Branding | null>(null);
@@ -92,9 +94,9 @@ export default function Layout() {
 
         {/* Phase 1 nav */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-          {PHASE1_NAV.map(({ to, label }) => (
+          {PHASE1_NAV_KEYS.map(({ to, labelKey }) => (
             <NavLink
-              key={label}
+              key={to}
               to={to}
               end={to === '/dashboard'}
               className={({ isActive }) =>
@@ -105,7 +107,7 @@ export default function Layout() {
                 }`
               }
             >
-              {label}
+              {t(labelKey)}
             </NavLink>
           ))}
 
@@ -116,7 +118,7 @@ export default function Layout() {
                 to="/admin"
                 className="flex items-center gap-2 px-0 py-1 text-[11px] text-green-400/60 hover:text-white transition-colors"
               >
-                ← Admin Panel
+                {t('navigation.sidebar.backToAdmin')}
               </NavLink>
             </div>
           )}
@@ -124,26 +126,25 @@ export default function Layout() {
           {/* Phase 2+ section */}
           <div className="pt-4 pb-1 px-3">
             <div className="text-[10px] font-semibold uppercase tracking-wider text-green-400/50">
-              Segera Hadir
+              {t('navigation.sidebar.comingSoon')}
             </div>
           </div>
 
-          {PHASE2_NAV.map((label) => (
+          {PHASE2_NAV_KEYS.map((labelKey) => (
             <NavLink
-              key={label}
+              key={labelKey}
               to="/unavailable"
               className="flex items-center justify-between px-3 py-2 rounded-md text-sm
                          text-green-100/30 hover:bg-white/5 transition-colors cursor-default"
               tabIndex={-1}
             >
-              <span className="truncate">{label}</span>
+              <span className="truncate">{t(labelKey)}</span>
               <span className="text-[9px] bg-green-900/50 text-green-300/50 px-1.5 py-0.5
                                rounded flex-shrink-0 ml-1">
-                Fase 2
+                {t('navigation.sidebar.phase2Label')}
               </span>
             </NavLink>
           ))}
-
         </nav>
 
         {/* User context */}
@@ -206,7 +207,7 @@ export default function Layout() {
               {showLogo && user?.company_id && (
                 <img
                   src={`${API_BASE}/api/companies/${user.company_id}/logo`}
-                  alt="Company logo"
+                  alt={t('settings.branding.logoAlt')}
                   style={{ maxHeight: 44, maxWidth: 160 }}
                   className="object-contain block flex-shrink-0"
                 />

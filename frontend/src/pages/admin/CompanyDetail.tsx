@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -9,6 +10,7 @@ import {
 } from '../../lib/adminApi';
 
 export default function CompanyDetail() {
+  const { t } = useTranslation();
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<CompanyDetailData | null>(null);
@@ -64,7 +66,7 @@ export default function CompanyDetail() {
   }
 
   if (error) return <div className="p-6 text-red-600">{error}</div>;
-  if (!data) return <div className="p-6 text-slate-400">Loading...</div>;
+  if (!data) return <div className="p-6 text-slate-400">{t('admin.companies.loading')}</div>;
 
   const { company, readiness, subscription, managers } = data;
 

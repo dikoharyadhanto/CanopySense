@@ -1,0 +1,553 @@
+{
+  "common": {
+    "loading": "TODO",
+    "save": "TODO",
+    "saving": "TODO",
+    "cancel": "TODO",
+    "close": "TODO",
+    "delete": "TODO",
+    "search": "TODO",
+    "submit": "TODO",
+    "approve": "TODO",
+    "reject": "TODO",
+    "all": "TODO",
+    "optional": "TODO",
+    "error": {
+      "generic": "TODO",
+      "failedLoad": "TODO"
+    }
+  },
+  "glossary": {
+    "company": "TODO",
+    "estate": "TODO",
+    "afdeling": "TODO",
+    "block": "TODO",
+    "pipeline": "TODO",
+    "manager": "TODO",
+    "viewer": "TODO",
+    "admin": "TODO"
+  },
+  "navigation": {
+    "sidebar": {
+      "dashboard": "TODO",
+      "exploreMap": "TODO",
+      "timeSeries": "TODO",
+      "comingSoon": "TODO",
+      "phase2Label": "TODO",
+      "backToAdmin": "TODO",
+      "phase2Items": {
+        "longTermTrends": "TODO",
+        "modelStudio": "TODO",
+        "alertsTasking": "TODO",
+        "reportsExport": "TODO"
+      }
+    },
+    "admin": {
+      "management": "TODO",
+      "pipeline": "TODO",
+      "data": "TODO",
+      "superAdmin": "TODO",
+      "backToDashboard": "TODO",
+      "dashboard": "TODO",
+      "companies": "TODO",
+      "auditLog": "TODO",
+      "triggerRun": "TODO",
+      "runHistory": "TODO",
+      "schedules": "TODO",
+      "estateOnboarding": "TODO",
+      "adminUsers": "TODO",
+      "dataViewer": "TODO",
+      "estateChange": "TODO",
+      "registrations": "TODO",
+      "systemSettings": "TODO"
+    }
+  },
+  "auth": {
+    "passwordHint": "TODO",
+    "login": {
+      "title": "TODO",
+      "subtitle": "TODO",
+      "usernameLabel": "TODO",
+      "usernamePlaceholder": "TODO",
+      "passwordLabel": "TODO",
+      "passwordPlaceholder": "TODO",
+      "submitButton": "TODO",
+      "submitting": "TODO",
+      "errorInvalid": "TODO",
+      "forgotPassword": "TODO",
+      "registerLink": "TODO"
+    },
+    "otp": {
+      "title": "TODO",
+      "subtitle": "TODO",
+      "codeLabel": "TODO",
+      "verifyButton": "TODO",
+      "verifying": "TODO",
+      "resendButton": "TODO",
+      "backButton": "TODO",
+      "errorInvalid": "TODO",
+      "errorResend": "TODO"
+    },
+    "brandPanel": {
+      "tagline": "TODO",
+      "description": "TODO",
+      "version": "TODO"
+    },
+    "forgotPassword": {
+      "title": "TODO",
+      "subtitle": "TODO",
+      "emailLabel": "TODO",
+      "emailPlaceholder": "TODO",
+      "submitButton": "TODO",
+      "submitting": "TODO",
+      "successMessage": "TODO",
+      "backToLogin": "TODO"
+    },
+    "resetPassword": {
+      "title": "TODO",
+      "newPasswordLabel": "TODO",
+      "confirmPasswordLabel": "TODO",
+      "submitButton": "TODO",
+      "submitting": "TODO",
+      "successTitle": "TODO",
+      "successMessage": "TODO",
+      "goToLoginButton": "TODO",
+      "invalidToken": "TODO",
+      "errorMismatch": "TODO",
+      "errorExpired": "TODO"
+    },
+    "setupAccount": {
+      "title": "TODO",
+      "subtitle": "TODO",
+      "setupTokenLabel": "TODO",
+      "setupTokenPlaceholder": "TODO",
+      "usernameLabel": "TODO",
+      "fullNameLabel": "TODO",
+      "passwordLabel": "TODO",
+      "confirmPasswordLabel": "TODO",
+      "submitButton": "TODO",
+      "submitting": "TODO",
+      "successTitle": "TODO",
+      "successMessage": "TODO",
+      "goToLoginButton": "TODO",
+      "errorMismatch": "TODO",
+      "errorPolicy": "TODO",
+      "errorExpired": "TODO"
+    },
+    "register": {
+      "title": "TODO",
+      "subtitle": "TODO",
+      "tagline": "TODO",
+      "companyNameLabel": "TODO",
+      "companyNamePlaceholder": "TODO",
+      "contactNameLabel": "TODO",
+      "contactNamePlaceholder": "TODO",
+      "emailLabel": "TODO",
+      "emailPlaceholder": "TODO",
+      "phoneLabel": "TODO",
+      "phonePlaceholder": "TODO",
+      "submitButton": "TODO",
+      "submitting": "TODO",
+      "successTitle": "TODO",
+      "successMessage": "TODO",
+      "backToLogin": "TODO",
+      "errorGeneric": "TODO"
+    },
+    "acceptInvite": {
+      "title": "TODO",
+      "subtitle": "TODO",
+      "acceptButton": "TODO",
+      "accepting": "TODO",
+      "successTitle": "TODO",
+      "successMessage": "TODO",
+      "goToLoginButton": "TODO",
+      "invalidToken": "TODO",
+      "errorExpired": "TODO"
+    }
+  },
+  "dashboard": {
+    "title": "TODO",
+    "subtitle": "TODO",
+    "dataLabel": "TODO",
+    "loading": "TODO",
+    "errorLoad": "TODO",
+    "stats": {
+      "avgNdvi": "TODO",
+      "indexCoverage": "TODO",
+      "lastAcquisition": "TODO",
+      "totalBlocks": "TODO",
+      "latestDateSub": "TODO",
+      "blocksWithData": "TODO",
+      "blockCountSub": "TODO",
+      "blocksWithDataLabel": "TODO"
+    },
+    "ndvi": {
+      "good": "TODO",
+      "medium": "TODO",
+      "low": "TODO",
+      "complete": "TODO"
+    },
+    "blockDetail": {
+      "title": "TODO",
+      "closeAriaLabel": "TODO",
+      "name": "TODO",
+      "code": "TODO",
+      "afdeling": "TODO",
+      "estate": "TODO",
+      "latestIndices": "TODO",
+      "date": "TODO",
+      "cloud": "TODO",
+      "viewTimeSeriesButton": "TODO"
+    },
+    "topBlocks": {
+      "panelTitle": "TODO",
+      "viewAllButton": "TODO"
+    }
+  },
+  "exploreMap": {
+    "prevFrameAriaLabel": "TODO",
+    "selectFrameAriaLabel": "TODO",
+    "nextFrameAriaLabel": "TODO",
+    "metaDate": "TODO",
+    "metaSensor": "TODO",
+    "metaResolution": "TODO",
+    "metaValidPixels": "TODO",
+    "metaCreated": "TODO",
+    "noData": "TODO"
+  },
+  "indexSelector": {
+    "label": "TODO"
+  },
+  "emptyState": {
+    "title": "TODO",
+    "description": "TODO",
+    "logoutButton": "TODO"
+  },
+  "unavailable": {
+    "pageTitle": "TODO",
+    "pageSubtitle": "TODO",
+    "title": "TODO",
+    "description": "TODO",
+    "backButton": "TODO"
+  },
+  "profile": {
+    "pageTitle": "TODO",
+    "tabs": {
+      "profile": "TODO",
+      "members": "TODO"
+    },
+    "accountInfo": {
+      "sectionTitle": "TODO",
+      "fullNameLabel": "TODO",
+      "usernameLabel": "TODO",
+      "emailLabel": "TODO",
+      "roleLabel": "TODO",
+      "companyConnected": "TODO",
+      "companyNotConnected": "TODO",
+      "saveButton": "TODO",
+      "saving": "TODO",
+      "successSave": "TODO",
+      "errorSave": "TODO",
+      "loadingProfile": "TODO"
+    },
+    "changePassword": {
+      "sectionTitle": "TODO",
+      "currentPasswordLabel": "TODO",
+      "newPasswordLabel": "TODO",
+      "confirmPasswordLabel": "TODO",
+      "submitButton": "TODO",
+      "saving": "TODO",
+      "successChange": "TODO",
+      "errorMismatch": "TODO",
+      "errorSave": "TODO"
+    },
+    "members": {
+      "inviteSection": "TODO",
+      "invitePlaceholder": "TODO",
+      "inviteButton": "TODO",
+      "inviting": "TODO",
+      "inviteSuccess": "TODO",
+      "inviteError": "TODO",
+      "membersSection": "TODO",
+      "loading": "TODO",
+      "errorLoad": "TODO",
+      "noMembers": "TODO",
+      "table": {
+        "name": "TODO",
+        "email": "TODO",
+        "role": "TODO",
+        "status": "TODO"
+      },
+      "approveLeave": "TODO",
+      "rejectLeave": "TODO",
+      "removeButton": "TODO",
+      "confirmRemove": "TODO",
+      "errorRemove": "TODO",
+      "errorLeaveAction": "TODO"
+    }
+  },
+  "settings": {
+    "pageTitle": "TODO",
+    "managerOnly": "TODO",
+    "noCompany": "TODO",
+    "tabs": {
+      "branding": "TODO",
+      "estate": "TODO",
+      "notifications": "TODO"
+    },
+    "branding": {
+      "companyNameSection": "TODO",
+      "companyNamePlaceholder": "TODO",
+      "saveButton": "TODO",
+      "saving": "TODO",
+      "logoSection": "TODO",
+      "logoAlt": "TODO",
+      "deleteLogoButton": "TODO",
+      "confirmDeleteLogo": "TODO",
+      "logoUploading": "TODO",
+      "logoGuidelines": "TODO",
+      "logoGuidelineFormat": "TODO",
+      "logoGuidelineSize": "TODO",
+      "logoGuidelineResize": "TODO",
+      "logoGuidelineTransparent": "TODO",
+      "logoGuidelineText": "TODO",
+      "headerVisibilitySection": "TODO",
+      "showNameInHeader": "TODO",
+      "showLogoInHeader": "TODO",
+      "nameSaved": "TODO",
+      "logoUploaded": "TODO",
+      "logoDeleted": "TODO",
+      "errorSaveName": "TODO",
+      "errorUploadLogo": "TODO",
+      "errorDeleteLogo": "TODO",
+      "errorToggleHeader": "TODO"
+    },
+    "estate": {
+      "sectionTitle": "TODO",
+      "currentStatus": "TODO",
+      "status": {
+        "none": "TODO",
+        "pending": "TODO",
+        "approved": "TODO",
+        "rejected": "TODO"
+      },
+      "rejectReason": "TODO",
+      "fileFormat": "TODO",
+      "submitButton": "TODO",
+      "uploading": "TODO",
+      "cancelButton": "TODO",
+      "confirmCancel": "TODO",
+      "warningTitle": "TODO",
+      "warningMessage": "TODO",
+      "warningCancelButton": "TODO",
+      "warningContinueButton": "TODO",
+      "successSubmit": "TODO",
+      "successCancel": "TODO",
+      "errorSubmit": "TODO",
+      "errorCancel": "TODO"
+    },
+    "notifications": {
+      "sectionTitle": "TODO",
+      "timezoneLabel": "TODO",
+      "notifyFailure": "TODO",
+      "notifySuccess": "TODO",
+      "saveButton": "TODO",
+      "saving": "TODO",
+      "successSave": "TODO",
+      "errorSave": "TODO"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "TODO",
+      "companies": "TODO",
+      "activeManagers": "TODO",
+      "subscriptions": "TODO",
+      "noData": "TODO",
+      "recentActions": "TODO",
+      "noRecentActions": "TODO",
+      "table": {
+        "actor": "TODO",
+        "action": "TODO",
+        "target": "TODO",
+        "time": "TODO"
+      },
+      "loading": "TODO",
+      "errorLoad": "TODO"
+    },
+    "companies": {
+      "title": "TODO",
+      "newButton": "TODO",
+      "searchPlaceholder": "TODO",
+      "searchButton": "TODO",
+      "createModal": {
+        "title": "TODO",
+        "nameLabel": "TODO",
+        "cancelButton": "TODO",
+        "createButton": "TODO",
+        "creating": "TODO",
+        "errorCreate": "TODO"
+      },
+      "table": {
+        "id": "TODO",
+        "name": "TODO",
+        "uuid": "TODO",
+        "created": "TODO",
+        "viewButton": "TODO",
+        "noCompanies": "TODO"
+      },
+      "loading": "TODO",
+      "errorLoad": "TODO"
+    },
+    "estateChange": {
+      "title": "TODO",
+      "filter": {
+        "all": "TODO",
+        "pending": "TODO",
+        "approved": "TODO",
+        "rejected": "TODO"
+      },
+      "table": {
+        "company": "TODO",
+        "status": "TODO",
+        "submittedAt": "TODO",
+        "actions": "TODO"
+      },
+      "previewButton": "TODO",
+      "previewLoading": "TODO",
+      "approveButton": "TODO",
+      "rejectButton": "TODO",
+      "confirmApprove": "TODO",
+      "successApprove": "TODO",
+      "errorApprove": "TODO",
+      "successReject": "TODO",
+      "errorReject": "TODO",
+      "rejectModal": {
+        "title": "TODO",
+        "reasonPlaceholder": "TODO",
+        "cancelButton": "TODO",
+        "confirmButton": "TODO",
+        "errorEmptyReason": "TODO"
+      },
+      "preview": {
+        "title": "TODO",
+        "closeButton": "TODO",
+        "noFeatures": "TODO",
+        "errorLoad": "TODO"
+      },
+      "loading": "TODO",
+      "noItems": "TODO",
+      "rejectReason": "TODO"
+    },
+    "registrations": {
+      "title": "TODO",
+      "filter": {
+        "all": "TODO",
+        "pending": "TODO",
+        "approved": "TODO",
+        "rejected": "TODO"
+      },
+      "table": {
+        "company": "TODO",
+        "contact": "TODO",
+        "email": "TODO",
+        "status": "TODO",
+        "submittedAt": "TODO",
+        "actions": "TODO"
+      },
+      "approveButton": "TODO",
+      "rejectButton": "TODO",
+      "confirmApprove": "TODO",
+      "successApprove": "TODO",
+      "errorApprove": "TODO",
+      "successReject": "TODO",
+      "errorReject": "TODO",
+      "rejectModal": {
+        "title": "TODO",
+        "reasonPlaceholder": "TODO",
+        "cancelButton": "TODO",
+        "confirmButton": "TODO",
+        "errorEmptyReason": "TODO"
+      },
+      "loading": "TODO",
+      "noItems": "TODO",
+      "rejectReason": "TODO"
+    },
+    "pipeline": {
+      "status": "TODO",
+      "triggerTitle": "TODO",
+      "historyTitle": "TODO",
+      "schedulesTitle": "TODO",
+      "fields": {
+        "mode": "TODO",
+        "company": "TODO",
+        "estate": "TODO",
+        "afdelingId": "TODO",
+        "estateId": "TODO",
+        "dateRange": "TODO",
+        "dateStart": "TODO",
+        "dateEnd": "TODO",
+        "elapsed": "TODO",
+        "status": "TODO",
+        "scope": "TODO",
+        "actor": "TODO",
+        "started": "TODO",
+        "duration": "TODO",
+        "runId": "TODO",
+        "cadence": "TODO",
+        "timezone": "TODO",
+        "nextRun": "TODO",
+        "lastRun": "TODO",
+        "createdBy": "TODO",
+        "actions": "TODO"
+      },
+      "confirmTitle": "TODO",
+      "loading": "TODO",
+      "polling": "TODO",
+      "noRuns": "TODO",
+      "noSchedules": "TODO",
+      "newSchedule": "TODO"
+    },
+    "dataViewer": {
+      "title": "TODO",
+      "subtitle": "TODO",
+      "loading": "TODO",
+      "noTables": "TODO",
+      "tableLoading": "TODO"
+    },
+    "subscriptionEdit": {
+      "title": "TODO",
+      "fields": {
+        "tier": "TODO",
+        "status": "TODO",
+        "billingInterval": "TODO",
+        "rasterMode": "TODO",
+        "timelapseEnabled": "TODO",
+        "timelapsePeriod": "TODO",
+        "startDate": "TODO",
+        "endDate": "TODO"
+      },
+      "successSave": "TODO"
+    }
+  },
+  "status": {
+    "notProcessed": "TODO",
+    "processing": "TODO",
+    "available": "TODO",
+    "noNewData": "TODO",
+    "skippedExisting": "TODO",
+    "failed": "TODO",
+    "partialSuccess": "TODO",
+    "pendingReview": "TODO",
+    "approved": "TODO",
+    "rejected": "TODO",
+    "active": "TODO",
+    "inactive": "TODO"
+  },
+  "error": {
+    "generic": "TODO",
+    "failedToLoad": "TODO",
+    "unauthorized": "TODO",
+    "notFound": "TODO"
+  }
+}

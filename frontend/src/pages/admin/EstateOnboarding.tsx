@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useRef } from 'react';
 
 const BLOCK_IMPORT_TEMPLATE = JSON.stringify(
@@ -88,6 +89,7 @@ import BlockImportMap from '../../components/BlockImportMap';
 type Step = 'company' | 'estate' | 'upload' | 'map-preview' | 'commit';
 
 export default function EstateOnboarding() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>('company');
 
   // Company selection
@@ -444,7 +446,7 @@ export default function EstateOnboarding() {
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-xl font-bold text-slate-800 mb-1">Estate Onboarding</h1>
+        <h1 className="text-xl font-bold text-slate-800 mb-1">{t('navigation.admin.estateOnboarding')}</h1>
         <p className="text-sm text-slate-500 mb-6">
           Create estate metadata stubs and import block boundaries from GeoJSON.
         </p>

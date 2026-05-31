@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import MapView, { type Block } from '../components/MapView';
 import IndexSelector, { type IndexKey } from '../components/IndexSelector';
@@ -48,6 +49,7 @@ function StatCard({ label, value, sub, delta, deltaColor = 'text-gray-500' }: St
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<IndexKey>('ndvi');
@@ -58,7 +60,7 @@ export default function Dashboard() {
   useEffect(() => {
     api.get('/api/blocks')
       .then((r) => setBlocks(r.data))
-      .catch(() => setError('Gagal memuat data blok. Periksa koneksi ke backend.'))
+      .catch(() => setError(t('dashboard.errorLoad')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -98,15 +100,13 @@ export default function Dashboard() {
       <div className="bg-white border-b border-gray-100 px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-base font-bold text-gray-800">Dashboard Executive</h1>
-            <p className="text-xs text-gray-500">
-              Monitoring real-time kesehatan kanopi perkebunan karet
-            </p>
+            <h1 className="text-base font-bold text-gray-800">{t('dashboard.title')}</h1>
+            <p className="text-xs text-gray-500">{t('dashboard.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             {stats?.latestDate && (
               <span className="text-xs text-gray-400 hidden sm:block">
-                Data: {stats.latestDate}
+                {t('dashboard.dataLabel')} {stats.latestDate}
               </span>
             )}
             <IndexSelector value={selectedIndex} onChange={setSelectedIndex} />
@@ -118,28 +118,30 @@ export default function Dashboard() {
       {stats && (
         <div className="px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 flex-shrink-0">
           <StatCard
-            label="Avg NDVI Estate"
+            label={t('dashboard.stats.avgNdvi')}
             value={stats.avgNdvi}
-            delta={stats.avgNdviNum !== null ? (stats.avgNdviNum >= 0.65 ? '↑ Baik' : stats.avgNdviNum >= 0.45 ? '→ Sedang' : '↓ Rendah') : undefined}
+            delta={stats.avgNdviNum !== null
+              ? (stats.avgNdviNum >= 0.65 ? t('dashboard.ndvi.good') : stats.avgNdviNum >= 0.45 ? t('dashboard.ndvi.medium') : t('dashboard.ndvi.low'))
+              : undefined}
             deltaColor={ndviColor(stats.avgNdviNum)}
-            sub={`dari ${stats.withData} blok`}
+            sub={t('dashboard.stats.blocksWithData', { count: stats.withData })}
           />
           <StatCard
-            label="Index Coverage"
+            label={t('dashboard.stats.indexCoverage')}
             value={`${stats.coveragePct}%`}
-            delta={stats.coveragePct === 100 ? '✓ Lengkap' : `${stats.withData}/${stats.blockCount}`}
+            delta={stats.coveragePct === 100 ? t('dashboard.ndvi.complete') : `${stats.withData}/${stats.blockCount}`}
             deltaColor={stats.coveragePct === 100 ? 'text-green-600' : 'text-amber-600'}
-            sub="blok berdata"
+            sub={t('dashboard.stats.blocksWithDataLabel')}
           />
           <StatCard
-            label="Akuisisi Terakhir"
+            label={t('dashboard.stats.lastAcquisition')}
             value={stats.latestDate ?? '—'}
-            sub="tanggal data terbaru"
+            sub={t('dashboard.stats.latestDateSub')}
           />
           <StatCard
-            label="Total Blok"
+            label={t('dashboard.stats.totalBlocks')}
             value={String(stats.blockCount)}
-            sub="blok di estate ini"
+            sub={t('dashboard.stats.blockCountSub')}
           />
         </div>
       )}
@@ -151,25 +153,25 @@ export default function Dashboard() {
           <aside className="w-60 bg-white border-r border-gray-100 p-4 flex flex-col gap-3
                             overflow-y-auto flex-shrink-0">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-gray-800 text-sm">Detail Blok</h2>
+              <h2 className="font-bold text-gray-800 text-sm">{t('dashboard.blockDetail.title')}</h2>
               <button
                 onClick={() => setSelectedBlock(null)}
                 className="text-gray-400 hover:text-gray-600 text-lg leading-none"
-                aria-label="Tutup detail blok"
+                aria-label={t('dashboard.blockDetail.closeAriaLabel')}
               >
                 &times;
               </button>
             </div>
             <div className="space-y-1.5 text-sm">
-              <div><span className="font-medium text-gray-600">Nama:</span> {selectedBlock.name}</div>
-              <div><span className="font-medium text-gray-600">Kode:</span> {selectedBlock.code}</div>
-              <div><span className="font-medium text-gray-600">Afdeling:</span> {selectedBlock.afdeling_name}</div>
-              <div><span className="font-medium text-gray-600">Estate:</span> {selectedBlock.estate_name}</div>
+              <div><span className="font-medium text-gray-600">{t('dashboard.blockDetail.name')}</span> {selectedBlock.name}</div>
+              <div><span className="font-medium text-gray-600">{t('dashboard.blockDetail.code')}</span> {selectedBlock.code}</div>
+              <div><span className="font-medium text-gray-600">{t('dashboard.blockDetail.afdeling')}</span> {selectedBlock.afdeling_name}</div>
+              <div><span className="font-medium text-gray-600">{t('dashboard.blockDetail.estate')}</span> {selectedBlock.estate_name}</div>
             </div>
             <hr className="border-gray-100" />
             <div className="space-y-1.5">
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                Indeks Terbaru
+                {t('dashboard.blockDetail.latestIndices')}
               </div>
               {(['ndvi', 'evi', 'ndre', 'savi', 'gndvi'] as const).map((k) => {
                 const val = selectedBlock[`latest_${k}` as keyof Block] as number | null;
@@ -183,8 +185,8 @@ export default function Dashboard() {
                 );
               })}
               <div className="text-xs text-gray-400 pt-1">
-                <div>Tanggal: {selectedBlock.acquisition_date ?? '-'}</div>
-                <div>Cloud: {selectedBlock.cloud_cover !== null ? selectedBlock.cloud_cover + '%' : '-'}</div>
+                <div>{t('dashboard.blockDetail.date')} {selectedBlock.acquisition_date ?? '-'}</div>
+                <div>{t('dashboard.blockDetail.cloud')} {selectedBlock.cloud_cover !== null ? selectedBlock.cloud_cover + '%' : '-'}</div>
               </div>
             </div>
             <button
@@ -192,7 +194,7 @@ export default function Dashboard() {
               className="w-full bg-[#19C853] text-white text-sm py-2 rounded-lg
                          hover:bg-green-500 transition-colors font-semibold"
             >
-              Lihat Time-Series →
+              {t('dashboard.blockDetail.viewTimeSeriesButton')}
             </button>
           </aside>
         )}
@@ -201,7 +203,7 @@ export default function Dashboard() {
         <main className="flex-1 relative">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-              <div className="text-sm text-gray-500">Memuat data blok...</div>
+              <div className="text-sm text-gray-500">{t('dashboard.loading')}</div>
             </div>
           )}
           {error && (
@@ -222,7 +224,7 @@ export default function Dashboard() {
           <aside className="w-56 bg-white border-l border-gray-100 flex flex-col overflow-hidden flex-shrink-0">
             <div className="px-4 py-3 border-b border-gray-100">
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Top Blok — {selectedIndex.toUpperCase()}
+                {t('dashboard.topBlocks.panelTitle', { index: selectedIndex.toUpperCase() })}
               </div>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
@@ -249,7 +251,7 @@ export default function Dashboard() {
                 onClick={() => navigate('/timeseries')}
                 className="text-xs text-green-700 font-semibold hover:underline"
               >
-                Lihat Semua Blok →
+                {t('dashboard.topBlocks.viewAllButton')}
               </button>
             </div>
           </aside>

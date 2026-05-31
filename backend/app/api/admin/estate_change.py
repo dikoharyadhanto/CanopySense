@@ -172,9 +172,12 @@ async def approve_estate_change(
             raise HTTPException(status_code=422, detail="Company has no active estate to replace")
         estate_id = estate["id"]
 
-        # Get manager email for notification
+        # Get manager email + company name for notification
         manager_row = await conn.fetchrow(
-            "SELECT email, full_name FROM users WHERE company_id = $1 AND role = 'manager' LIMIT 1",
+            """SELECT u.email, u.full_name, c.company_name
+               FROM users u
+               JOIN canopysense.companies c ON c.id = u.company_id
+               WHERE u.company_id = $1 AND u.role = 'manager' LIMIT 1""",
             company_id,
         )
 
@@ -296,6 +299,7 @@ async def approve_estate_change(
             await send_estate_change_approved_email(
                 manager_row["email"],
                 manager_row["full_name"] or "Manager",
+                manager_row["company_name"] or "",
             )
         except Exception:
             pass
@@ -337,7 +341,10 @@ async def reject_estate_change(
         )
 
         manager_row = await conn.fetchrow(
-            "SELECT email, full_name FROM users WHERE company_id = $1 AND role = 'manager' LIMIT 1",
+            """SELECT u.email, u.full_name, c.company_name
+               FROM users u
+               JOIN canopysense.companies c ON c.id = u.company_id
+               WHERE u.company_id = $1 AND u.role = 'manager' LIMIT 1""",
             company_id,
         )
 
@@ -352,6 +359,7 @@ async def reject_estate_change(
             await send_estate_change_rejected_email(
                 manager_row["email"],
                 manager_row["full_name"] or "Manager",
+                manager_row["company_name"] or "",
                 body.reason,
             )
         except Exception:

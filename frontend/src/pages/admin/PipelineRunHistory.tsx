@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPipelineRuns, type PipelineRun } from '../../lib/adminApi';
@@ -18,6 +19,7 @@ function duration(run: PipelineRun): string {
 }
 
 export default function PipelineRunHistory() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [runs, setRuns] = useState<PipelineRun[]>([]);
   const [total, setTotal] = useState(0);
@@ -49,7 +51,7 @@ export default function PipelineRunHistory() {
     <div className="flex-1 overflow-y-auto p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">Pipeline Run History</h1>
+          <h1 className="text-xl font-bold text-slate-800">{t('admin.pipeline.historyTitle')}</h1>
           <p className="text-sm text-slate-500 mt-0.5">{total} total runs</p>
         </div>
         <button
@@ -77,10 +79,10 @@ export default function PipelineRunHistory() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400 text-sm">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400 text-sm">{t('admin.pipeline.loading')}</td></tr>
             )}
             {!loading && runs.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400 text-sm">No runs yet.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400 text-sm">{t('admin.pipeline.noRuns')}</td></tr>
             )}
             {!loading && runs.map((r) => (
               <tr
