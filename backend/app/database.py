@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Environment guard — set to "production" to block staging_reset.py
     ENVIRONMENT: str = "development"
     FRONTEND_URL: str = "http://localhost:3000"
+    SUPERADMIN_NOTIFY_EMAIL: str = ""
+    ARCHIVE_RETENTION_DAYS: int = 30
+    APP_VERSION: str = "1.0.0"
 
     class Config:
         env_file = ".env"

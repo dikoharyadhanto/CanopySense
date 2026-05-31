@@ -133,3 +133,213 @@ async def send_viewer_invite_email(to_email: str, company_name: str, invite_link
         start_tls=True,
     )
     logger.info("Viewer invite email sent to %s", to_email)
+
+
+async def _send(msg: MIMEMultipart) -> None:
+    await aiosmtplib.send(
+        msg,
+        hostname=settings.SMTP_HOST,
+        port=settings.SMTP_PORT,
+        username=settings.SMTP_USER,
+        password=settings.SMTP_PASSWORD,
+        start_tls=True,
+    )
+
+
+def _smtp_configured() -> bool:
+    return bool(settings.SMTP_HOST and settings.SMTP_USER)
+
+
+async def send_registration_confirmation_email(to_email: str, contact_name: str, company_name: str) -> None:
+    if not _smtp_configured():
+        logger.warning("SMTP not configured — registration confirmation email not sent")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "CanopySense — Pendaftaran Diterima"
+    msg["From"] = settings.EMAIL_FROM or settings.SMTP_USER
+    msg["To"] = to_email
+
+    body_text = (
+        f"Halo {contact_name},\n\n"
+        f"Pendaftaran perusahaan {company_name} di CanopySense telah diterima dan sedang ditinjau.\n"
+        f"Anda akan menerima email konfirmasi setelah pendaftaran disetujui atau ditolak.\n\n"
+        f"Terima kasih.\n"
+    )
+    body_html = (
+        "<html><body>"
+        f"<p>Halo <strong>{contact_name}</strong>,</p>"
+        f"<p>Pendaftaran perusahaan <strong>{company_name}</strong> di CanopySense telah diterima "
+        "dan sedang dalam proses peninjauan oleh administrator.</p>"
+        "<p>Anda akan mendapat email konfirmasi setelah pendaftaran disetujui atau ditolak.</p>"
+        "<p style='color:#888;font-size:12px'>Jika Anda tidak merasa mendaftar, abaikan email ini.</p>"
+        "</body></html>"
+    )
+    msg.attach(MIMEText(body_text, "plain"))
+    msg.attach(MIMEText(body_html, "html"))
+    await _send(msg)
+    logger.info("Registration confirmation email sent to %s", to_email)
+
+
+async def send_registration_notify_superadmin_email(
+    company_name: str, contact_name: str, contact_email: str, phone: str
+) -> None:
+    notify_to = settings.SUPERADMIN_NOTIFY_EMAIL or settings.EMAIL_FROM
+    if not _smtp_configured() or not notify_to:
+        logger.warning("SMTP not configured or no superadmin email — notify email not sent")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"CanopySense — Pendaftaran Baru: {company_name}"
+    msg["From"] = settings.EMAIL_FROM or settings.SMTP_USER
+    msg["To"] = notify_to
+
+    body_text = (
+        f"Pendaftaran baru diterima:\n\n"
+        f"Perusahaan : {company_name}\n"
+        f"Kontak     : {contact_name}\n"
+        f"Email      : {contact_email}\n"
+        f"Telepon    : {phone or '-'}\n\n"
+        f"Login ke admin panel untuk meninjau pendaftaran ini.\n"
+    )
+    body_html = (
+        "<html><body>"
+        "<p>Pendaftaran baru diterima di CanopySense:</p>"
+        "<table style='border-collapse:collapse'>"
+        f"<tr><td style='padding:4px 12px 4px 0'><strong>Perusahaan</strong></td><td>{company_name}</td></tr>"
+        f"<tr><td style='padding:4px 12px 4px 0'><strong>Kontak</strong></td><td>{contact_name}</td></tr>"
+        f"<tr><td style='padding:4px 12px 4px 0'><strong>Email</strong></td><td>{contact_email}</td></tr>"
+        f"<tr><td style='padding:4px 12px 4px 0'><strong>Telepon</strong></td><td>{phone or '-'}</td></tr>"
+        "</table>"
+        "<p>Login ke admin panel untuk meninjau pendaftaran ini.</p>"
+        "</body></html>"
+    )
+    msg.attach(MIMEText(body_text, "plain"))
+    msg.attach(MIMEText(body_html, "html"))
+    await _send(msg)
+    logger.info("Superadmin registration notify sent to %s", notify_to)
+
+
+async def send_registration_rejection_email(
+    to_email: str, contact_name: str, company_name: str, reason: str
+) -> None:
+    if not _smtp_configured():
+        logger.warning("SMTP not configured — registration rejection email not sent")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "CanopySense — Pendaftaran Tidak Disetujui"
+    msg["From"] = settings.EMAIL_FROM or settings.SMTP_USER
+    msg["To"] = to_email
+
+    body_text = (
+        f"Halo {contact_name},\n\n"
+        f"Kami menyampaikan bahwa pendaftaran perusahaan {company_name} tidak dapat disetujui.\n\n"
+        f"Alasan: {reason}\n\n"
+        f"Jika ada pertanyaan, hubungi administrator CanopySense.\n"
+    )
+    body_html = (
+        "<html><body>"
+        f"<p>Halo <strong>{contact_name}</strong>,</p>"
+        f"<p>Kami menyampaikan bahwa pendaftaran perusahaan <strong>{company_name}</strong> "
+        "tidak dapat disetujui.</p>"
+        f"<p><strong>Alasan:</strong> {reason}</p>"
+        "<p>Jika ada pertanyaan, hubungi administrator CanopySense.</p>"
+        "</body></html>"
+    )
+    msg.attach(MIMEText(body_text, "plain"))
+    msg.attach(MIMEText(body_html, "html"))
+    await _send(msg)
+    logger.info("Registration rejection email sent to %s", to_email)
+
+
+async def send_registration_approval_setup_email(
+    to_email: str, contact_name: str, company_name: str, setup_link: str
+) -> None:
+    if not _smtp_configured():
+        logger.warning("SMTP not configured — registration approval setup email not sent")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"CanopySense — Selamat Datang, {company_name}!"
+    msg["From"] = settings.EMAIL_FROM or settings.SMTP_USER
+    msg["To"] = to_email
+
+    body_text = (
+        f"Halo {contact_name},\n\n"
+        f"Selamat! Pendaftaran perusahaan {company_name} di CanopySense telah disetujui.\n\n"
+        f"Klik tautan berikut untuk mengatur akun manager Anda:\n{setup_link}\n\n"
+        f"Tautan ini berlaku selama 1 jam.\n"
+    )
+    body_html = (
+        "<html><body>"
+        f"<p>Halo <strong>{contact_name}</strong>,</p>"
+        f"<p>Selamat! Pendaftaran perusahaan <strong>{company_name}</strong> di CanopySense "
+        "telah disetujui.</p>"
+        "<p>Klik tombol di bawah untuk mengatur akun manager Anda:</p>"
+        f"<p><a href='{setup_link}' style='background:#19C853;color:#fff;padding:10px 20px;"
+        "border-radius:6px;text-decoration:none;font-weight:bold'>Atur Akun Saya</a></p>"
+        "<p style='color:#888;font-size:12px'>Tautan ini berlaku selama <strong>1 jam</strong>.</p>"
+        "</body></html>"
+    )
+    msg.attach(MIMEText(body_text, "plain"))
+    msg.attach(MIMEText(body_html, "html"))
+    await _send(msg)
+    logger.info("Registration approval setup email sent to %s", to_email)
+
+
+async def send_estate_change_approved_email(to_email: str, full_name: str) -> None:
+    if not _smtp_configured():
+        logger.warning("SMTP not configured — estate change approved email not sent")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "CanopySense — Perubahan Data Estate Disetujui"
+    msg["From"] = settings.EMAIL_FROM or settings.SMTP_USER
+    msg["To"] = to_email
+
+    body_text = (
+        f"Halo {full_name},\n\n"
+        "Permintaan perubahan data estate Anda telah disetujui oleh administrator.\n"
+        "Data estate baru sudah aktif di sistem CanopySense.\n"
+    )
+    body_html = (
+        "<html><body>"
+        f"<p>Halo <strong>{full_name}</strong>,</p>"
+        "<p>Permintaan perubahan data estate Anda telah <strong>disetujui</strong> oleh administrator.</p>"
+        "<p>Data estate baru sudah aktif di sistem CanopySense.</p>"
+        "</body></html>"
+    )
+    msg.attach(MIMEText(body_text, "plain"))
+    msg.attach(MIMEText(body_html, "html"))
+    await _send(msg)
+    logger.info("Estate change approved email sent to %s", to_email)
+
+
+async def send_estate_change_rejected_email(to_email: str, full_name: str, reason: str) -> None:
+    if not _smtp_configured():
+        logger.warning("SMTP not configured — estate change rejected email not sent")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "CanopySense — Perubahan Data Estate Ditolak"
+    msg["From"] = settings.EMAIL_FROM or settings.SMTP_USER
+    msg["To"] = to_email
+
+    body_text = (
+        f"Halo {full_name},\n\n"
+        f"Permintaan perubahan data estate Anda tidak disetujui.\n\nAlasan: {reason}\n\n"
+        "Anda dapat mengajukan permintaan baru setelah melakukan perbaikan.\n"
+    )
+    body_html = (
+        "<html><body>"
+        f"<p>Halo <strong>{full_name}</strong>,</p>"
+        "<p>Permintaan perubahan data estate Anda <strong>tidak disetujui</strong>.</p>"
+        f"<p><strong>Alasan:</strong> {reason}</p>"
+        "<p>Anda dapat mengajukan permintaan baru setelah melakukan perbaikan.</p>"
+        "</body></html>"
+    )
+    msg.attach(MIMEText(body_text, "plain"))
+    msg.attach(MIMEText(body_html, "html"))
+    await _send(msg)
+    logger.info("Estate change rejected email sent to %s", to_email)

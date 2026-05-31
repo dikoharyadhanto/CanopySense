@@ -30,6 +30,8 @@ from app.limiter import limiter
 from app.services.email import (
     send_otp_email,
     send_password_reset_email,
+    send_registration_confirmation_email,
+    send_registration_notify_superadmin_email,
     send_viewer_invite_email,
 )
 
@@ -673,3 +675,64 @@ async def accept_viewer_invite(
             "setup_token": setup_token_plaintext,
         }
     return {"message": "Invitation accepted.", "company_name": company_name, "needs_setup": False}
+
+
+# ─── POST /auth/register ──────────────────────────────────────────────────────
+# TASK-012: public self-service company registration
+
+class RegisterRequest(BaseModel):
+    company_name: str
+    contact_name: str
+    email: str
+    phone: Optional[str] = None
+
+
+@router.post("/register", status_code=201)
+@limiter.limit("5/hour")
+async def register_company(
+    request: Request,
+    body: RegisterRequest,
+    pool: asyncpg.Pool = Depends(get_db_pool),
+):
+    company_name = body.company_name.strip()
+    contact_name = body.contact_name.strip()
+    email = body.email.strip().lower()
+    phone = (body.phone or "").strip() or None
+
+    if not company_name:
+        raise HTTPException(status_code=422, detail="company_name must not be empty")
+    if not contact_name:
+        raise HTTPException(status_code=422, detail="contact_name must not be empty")
+    if not email or "@" not in email:
+        raise HTTPException(status_code=422, detail="Invalid email address")
+
+    async with pool.acquire() as conn:
+        existing = await conn.fetchrow(
+            "SELECT id FROM company_registration_requests WHERE email = $1 AND status = 'PENDING'",
+            email,
+        )
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="A pending registration for this email already exists",
+            )
+
+        await conn.execute(
+            """
+            INSERT INTO company_registration_requests (company_name, contact_name, email, phone, status)
+            VALUES ($1, $2, $3, $4, 'PENDING')
+            """,
+            company_name, contact_name, email, phone,
+        )
+
+    try:
+        await send_registration_confirmation_email(email, contact_name, company_name)
+    except Exception:
+        pass
+
+    try:
+        await send_registration_notify_superadmin_email(company_name, contact_name, email, phone or "")
+    except Exception:
+        pass
+
+    return {"message": "Registration submitted. You will be notified by email."}

@@ -166,9 +166,12 @@ export default function Login() {
                 >
                   {loading ? 'Memproses...' : 'Masuk'}
                 </button>
-                <div className="text-center">
-                  <Link to="/forgot-password" className="text-sm text-slate-500 hover:text-slate-700 underline">
+                <div className="text-center space-y-1">
+                  <Link to="/forgot-password" className="block text-sm text-slate-500 hover:text-slate-700 underline">
                     Lupa password?
+                  </Link>
+                  <Link to="/register" className="block text-sm text-green-700 hover:text-green-900 underline">
+                    Daftar perusahaan baru
                   </Link>
                 </div>
               </form>

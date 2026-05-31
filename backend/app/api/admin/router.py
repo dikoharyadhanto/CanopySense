@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.api.admin import (
     companies, managers, subscriptions, internal_users,
     audit, dashboard, pipeline, estate_onboarding, data_viewer,
+    estate_change, system_settings, registrations,
 )
 
 router = APIRouter()
@@ -15,3 +16,6 @@ router.include_router(audit.router,              prefix="/audit",             ta
 router.include_router(pipeline.router,           prefix="/pipeline",          tags=["admin-pipeline"])
 router.include_router(estate_onboarding.router,  prefix="/estate-onboarding", tags=["admin-estate-onboarding"])
 router.include_router(data_viewer.router,        prefix="/data-viewer",       tags=["admin-data-viewer"])
+router.include_router(estate_change.router,      prefix="",                   tags=["admin-estate-change"])
+router.include_router(system_settings.router,    prefix="",                   tags=["admin-system-settings"])
+router.include_router(registrations.router,      prefix="",                   tags=["admin-registrations"])

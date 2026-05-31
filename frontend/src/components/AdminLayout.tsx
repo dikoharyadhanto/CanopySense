@@ -20,8 +20,11 @@ const DATA_NAV = [
 ];
 
 const SUPER_ADMIN_NAV = [
-  { to: '/admin/users',        label: 'Admin Users',  end: false },
-  { to: '/admin/data-viewer',  label: 'Data Viewer',  end: false },
+  { to: '/admin/users',                    label: 'Admin Users',        end: false },
+  { to: '/admin/data-viewer',              label: 'Data Viewer',        end: false },
+  { to: '/admin/estate-change-requests',   label: 'Estate Change',      end: false },
+  { to: '/admin/registrations',            label: 'Registrations',      end: false },
+  { to: '/admin/system-settings',          label: 'System Settings',    end: false },
 ];
 
 function Initials({ name }: { name: string }) {

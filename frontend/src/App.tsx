@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ExploreMap from './pages/ExploreMap';
 import TimeSeries from './pages/TimeSeries';
@@ -10,7 +11,7 @@ import ResetPassword from './pages/ResetPassword';
 import AcceptInvite from './pages/AcceptInvite';
 import EmptyState from './pages/EmptyState';
 import Profile from './pages/Profile';
-import Members from './pages/settings/Members';
+import Settings from './pages/settings/Settings';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import AdminRoute from './components/AdminRoute';
@@ -27,6 +28,9 @@ import PipelineRunHistory from './pages/admin/PipelineRunHistory';
 import PipelineSchedules from './pages/admin/PipelineSchedules';
 import EstateOnboarding from './pages/admin/EstateOnboarding';
 import DataViewer from './pages/admin/DataViewer';
+import EstateChangeRequests from './pages/admin/EstateChangeRequests';
+import SystemSettings from './pages/admin/SystemSettings';
+import Registrations from './pages/admin/Registrations';
 import SuperAdminRoute from './components/SuperAdminRoute';
 
 function App() {
@@ -34,6 +38,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/setup" element={<SetupAccount />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -48,7 +53,8 @@ function App() {
             <Route path="/timeseries" element={<TimeSeries />} />
             <Route path="/unavailable" element={<Unavailable />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/settings/members" element={<Members />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/members" element={<Navigate to="/settings" replace />} />
           </Route>
         </Route>
 
@@ -68,6 +74,9 @@ function App() {
             <Route path="/admin/estate-onboarding" element={<EstateOnboarding />} />
             <Route element={<SuperAdminRoute />}>
               <Route path="/admin/data-viewer" element={<DataViewer />} />
+              <Route path="/admin/estate-change-requests" element={<EstateChangeRequests />} />
+              <Route path="/admin/system-settings" element={<SystemSettings />} />
+              <Route path="/admin/registrations" element={<Registrations />} />
             </Route>
           </Route>
         </Route>

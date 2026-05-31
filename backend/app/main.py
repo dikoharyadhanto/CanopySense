@@ -2,9 +2,12 @@ import asyncio
 import logging
 import os
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.auth.routes import router as auth_router
@@ -104,6 +107,11 @@ app.include_router(blocks_router, prefix="/api", tags=["api"])
 app.include_router(raster_router, prefix="/api", tags=["raster"])
 app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
 app.include_router(companies_router, prefix="/api/companies", tags=["companies"])
+
+
+_uploads_dir = Path(__file__).resolve().parent.parent / "uploads"
+_uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
 
 
 @app.get("/health")
