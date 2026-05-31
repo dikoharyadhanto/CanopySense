@@ -76,6 +76,16 @@ async def approve_registration(
     if reg["status"] != "PENDING":
         raise HTTPException(status_code=400, detail="Registration is not in PENDING state")
 
+    async with pool.acquire() as conn:
+        existing = await conn.fetchval(
+            "SELECT id FROM users WHERE email = $1", reg["email"]
+        )
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Email {reg['email']} already has an active user account. Cannot approve duplicate registration."
+        )
+
     plaintext_token = secrets.token_urlsafe(32)
     token_hash = get_password_hash(plaintext_token)
     expires_at = datetime.utcnow() + timedelta(hours=SETUP_TOKEN_TTL_HOURS)
@@ -106,7 +116,7 @@ async def approve_registration(
                 INSERT INTO users
                     (email, username, full_name, password_hash, company_id, role,
                      is_active, setup_required,
-                     password_reset_token_hash, password_reset_token_expires_at)
+                     setup_token_hash, setup_token_expires_at)
                 VALUES ($1, $2, $3, $4, $5, 'manager', TRUE, TRUE, $6, $7)
                 """,
                 reg["email"],
