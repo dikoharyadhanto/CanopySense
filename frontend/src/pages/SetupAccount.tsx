@@ -61,18 +61,18 @@ export default function SetupAccount() {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F4FAF6] flex items-center justify-center px-4">
         <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-sm text-center">
           <div className="text-green-600 text-3xl mb-3">✓</div>
-          <h1 className="text-lg font-bold text-slate-800 mb-2">Account Setup Complete</h1>
+          <h1 className="text-lg font-bold text-slate-800 mb-2">Akun Siap Digunakan</h1>
           <p className="text-sm text-slate-500 mb-5">
-            Your credentials have been saved. You can now log in.
+            Kredensial Anda telah disimpan. Silakan masuk dengan username dan password baru.
           </p>
           <button
             onClick={() => navigate('/login')}
-            className="w-full py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"
+            className="w-full py-2 bg-[#19C853] text-white text-sm rounded-lg hover:bg-green-500 font-semibold"
           >
-            Go to Login
+            Masuk ke Akun
           </button>
         </div>
       </div>
@@ -80,31 +80,33 @@ export default function SetupAccount() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="min-h-screen bg-[#F4FAF6] flex items-center justify-center px-4">
       <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-sm">
         <div className="mb-6 text-center">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center
+          <div className="w-10 h-10 rounded-xl bg-[#19C853] flex items-center justify-center
                           text-white text-lg font-bold mx-auto mb-3">
             C
           </div>
-          <h1 className="text-lg font-bold text-slate-800">Set Up Your Account</h1>
+          <h1 className="text-lg font-bold text-slate-800">Lengkapi Akun Anda</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Enter the setup token provided by your admin to activate your account.
+            Buat username dan password untuk mengaktifkan akun CanopySense Anda.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Setup Token</label>
-            <input
-              type="text"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              required
-              placeholder="Paste the token from your admin"
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
-            />
-          </div>
+          {!searchParams.get('token') && (
+            <div>
+              <label className="block text-sm text-slate-600 mb-1">Setup Token</label>
+              <input
+                type="text"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                required
+                placeholder="Token dari admin"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-mono"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm text-slate-600 mb-1">Username</label>
             <input
@@ -112,17 +114,17 @@ export default function SetupAccount() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Full Name</label>
+            <label className="block text-sm text-slate-600 mb-1">Nama Lengkap</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
@@ -133,7 +135,7 @@ export default function SetupAccount() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full border border-slate-300 rounded-md px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
               <button
                 type="button"
@@ -147,14 +149,14 @@ export default function SetupAccount() {
             <p className="text-xs text-slate-400 mt-1">{PASSWORD_HINT}</p>
           </div>
           <div>
-            <label className="block text-sm text-slate-600 mb-1">Confirm Password</label>
+            <label className="block text-sm text-slate-600 mb-1">Konfirmasi Password</label>
             <div className="relative">
               <input
                 type={showConfirm ? 'text' : 'password'}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
-                className="w-full border border-slate-300 rounded-md px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
               <button
                 type="button"
@@ -170,9 +172,9 @@ export default function SetupAccount() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50 font-medium mt-2"
+            className="w-full py-2.5 bg-[#19C853] hover:bg-green-500 disabled:opacity-60 text-white text-sm rounded-lg font-semibold transition-colors mt-2"
           >
-            {submitting ? 'Setting up...' : 'Activate Account'}
+            {submitting ? 'Menyimpan...' : 'Aktifkan Akun'}
           </button>
         </form>
       </div>

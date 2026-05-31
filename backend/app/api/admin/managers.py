@@ -153,12 +153,15 @@ async def delete_pending_manager(
                 detail="Cannot delete a manager who has completed setup. Deactivate instead.",
             )
 
-        await log_admin_action(conn, admin["id"], "delete_pending_manager", "user", user_id,
+        await log_admin_action(conn, admin["id"], "deactivate_pending_manager", "user", user_id,
                                {"email": user["email"]})
         await conn.execute("DELETE FROM user_company_roles WHERE user_id = $1", user_id)
-        await conn.execute("DELETE FROM users WHERE id = $1", user_id)
+        await conn.execute(
+            "UPDATE users SET is_active = false WHERE id = $1",
+            user_id,
+        )
 
-    return {"user_id": user_id, "deleted": True}
+    return {"user_id": user_id, "deactivated": True}
 
 
 @router.patch("/{user_id}/status")

@@ -270,7 +270,7 @@ def convert_to_geojson_bytes(file_bytes: bytes, filename: str) -> tuple[bytes, l
 
     Returns (geojson_bytes, warnings).
     Raises ValueError on unrecognised format or read error.
-    Requires geopandas, fiona, pyproj.
+    Requires geopandas, pyogrio, pyproj.
     """
     import io
     import zipfile as _zipfile

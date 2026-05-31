@@ -508,7 +508,13 @@ async def get_profile(
 ):
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT id, username, full_name, email, role, company_id FROM users WHERE id = $1",
+            """
+            SELECT u.id, u.username, u.full_name, u.email, u.role, u.company_id,
+                   c.company_name
+            FROM users u
+            LEFT JOIN companies c ON c.id = u.company_id
+            WHERE u.id = $1
+            """,
             current_user["id"],
         )
     if not row:
@@ -616,20 +622,54 @@ async def accept_viewer_invite(
         if matched is None:
             raise HTTPException(status_code=400, detail="Invalid or expired invitation token")
 
-        await conn.execute(
-            """
-            UPDATE users
-            SET role = 'viewer',
-                company_id = $1,
-                viewer_invite_token_hash = NULL,
-                viewer_invite_token_expires_at = NULL,
-                updated_at = NOW()
-            WHERE id = $2
-            """,
-            matched["company_id"], matched["id"],
+        user_row = await conn.fetchrow(
+            "SELECT setup_required FROM users WHERE id = $1", matched["id"]
         )
+        needs_setup = user_row["setup_required"] if user_row else False
+
+        setup_token_plaintext = None
+        if needs_setup:
+            setup_token_plaintext = secrets.token_urlsafe(32)
+            setup_token_hash = get_password_hash(setup_token_plaintext)
+            setup_token_expires = datetime.utcnow() + timedelta(hours=24)
+            await conn.execute(
+                """
+                UPDATE users
+                SET role = 'viewer',
+                    company_id = $1,
+                    viewer_invite_token_hash = NULL,
+                    viewer_invite_token_expires_at = NULL,
+                    setup_token_hash = $2,
+                    setup_token_expires_at = $3,
+                    updated_at = NOW()
+                WHERE id = $4
+                """,
+                matched["company_id"], setup_token_hash, setup_token_expires, matched["id"],
+            )
+        else:
+            await conn.execute(
+                """
+                UPDATE users
+                SET role = 'viewer',
+                    company_id = $1,
+                    viewer_invite_token_hash = NULL,
+                    viewer_invite_token_expires_at = NULL,
+                    updated_at = NOW()
+                WHERE id = $2
+                """,
+                matched["company_id"], matched["id"],
+            )
+
         company = await conn.fetchrow(
             "SELECT company_name FROM companies WHERE id = $1", matched["company_id"]
         )
 
-    return {"message": "Invitation accepted.", "company_name": company["company_name"] if company else None}
+    company_name = company["company_name"] if company else None
+    if needs_setup:
+        return {
+            "message": "Invitation accepted. Please complete your account setup.",
+            "company_name": company_name,
+            "needs_setup": True,
+            "setup_token": setup_token_plaintext,
+        }
+    return {"message": "Invitation accepted.", "company_name": company_name, "needs_setup": False}

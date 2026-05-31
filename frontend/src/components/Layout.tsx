@@ -7,9 +7,6 @@ const PHASE1_NAV = [
   { to: '/timeseries',   label: 'Time-Series Analyzer' },
 ];
 
-const MANAGER_NAV = [
-  { to: '/settings/members', label: 'Kelola Anggota' },
-];
 
 const PHASE2_NAV = [
   'Long-Term Trends',
@@ -103,36 +100,14 @@ export default function Layout() {
             </NavLink>
           ))}
 
-          {/* Manager-only nav */}
-          {user?.role === 'manager' && (
-            <>
-              <div className="pt-4 pb-1 px-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-green-400/50">
-                  Pengaturan
-                </div>
-              </div>
-              {MANAGER_NAV.map(({ to, label }) => (
-                <NavLink
-                  key={label}
-                  to={to}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-                      isActive
-                        ? 'bg-green-700/60 text-white font-semibold border-l-2 border-[#19C853]'
-                        : 'text-green-100/80 hover:bg-white/10 hover:text-white'
-                    }`
-                  }
-                >
-                  {label}
-                </NavLink>
-              ))}
-            </>
-          )}
         </nav>
 
         {/* User context */}
         <div className="border-t border-white/10 px-4 py-3">
-          <div className="flex items-center gap-2.5 mb-2">
+          <NavLink
+            to="/profile"
+            className="flex items-center gap-2.5 mb-2 rounded-md px-1 py-1 hover:bg-white/10 transition-colors"
+          >
             <Initials name={user?.sub ?? '?'} />
             <div className="min-w-0">
               <div className="text-xs text-green-100 font-semibold truncate">
@@ -142,26 +117,18 @@ export default function Layout() {
                 {user?.role ?? 'Unknown Role'}
               </div>
             </div>
-          </div>
-          <div className="flex gap-3 items-center">
-            <NavLink
-              to="/profile"
-              className="text-[11px] text-green-300/70 hover:text-green-300 transition-colors underline"
-            >
-              Profil
-            </NavLink>
-            <button
-              onClick={handleLogout}
-              className="text-[11px] text-red-300/70 hover:text-red-300 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
+          </NavLink>
+          <button
+            onClick={handleLogout}
+            className="text-[11px] text-red-300/70 hover:text-red-300 transition-colors ml-1"
+          >
+            Logout
+          </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         <Outlet />
       </div>
     </div>

@@ -46,7 +46,7 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-const REQUIRED_PROPS = ['block_code', 'block_name', 'afdeling_code', 'afdeling_name'] as const;
+const REQUIRED_PROPS = ['block_name', 'afdeling_code', 'afdeling_name'] as const;
 
 const STOP_WORDS = new Set(['dan', 'atau', 'the', 'and', 'or', 'of', 'di', 'ke', 'dari', 'untuk', 'a', 'an', 'by', 'at']);
 
@@ -74,15 +74,18 @@ import {
   createOnboardingEstate,
   getOnboardingEstateDetail,
   editOnboardingEstate,
+  parseImport,
   previewImport,
   commitImport,
   Company,
   EstateStub,
   EstateDetail,
   ImportPreviewResult,
+  ParseImportResult,
 } from '../../lib/adminApi';
+import BlockImportMap from '../../components/BlockImportMap';
 
-type Step = 'company' | 'estate' | 'upload' | 'mapping' | 'preview' | 'commit';
+type Step = 'company' | 'estate' | 'upload' | 'map-preview' | 'commit';
 
 export default function EstateOnboarding() {
   const [step, setStep] = useState<Step>('company');
@@ -119,13 +122,18 @@ export default function EstateOnboarding() {
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [mappingError, setMappingError] = useState('');
+  // Original features from first parse — used as re-mapping source even after transforms
+  const [rawFileFeatures, setRawFileFeatures] = useState<Array<{ properties: Record<string, unknown>; [k: string]: unknown }>>([]);
 
-  // File upload + preview
+  // File upload + map preview
   const fileRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [parseLoading, setParseLoading] = useState(false);
+  const [parseResult, setParseResult] = useState<ParseImportResult | null>(null);
+  const [parseError, setParseError] = useState('');
   const [previewResult, setPreviewResult] = useState<ImportPreviewResult | null>(null);
   const [previewError, setPreviewError] = useState('');
+  const [showMapper, setShowMapper] = useState(false);
 
   // Commit
   const [commitLoading, setCommitLoading] = useState(false);
@@ -200,10 +208,14 @@ export default function EstateOnboarding() {
 
   async function selectEstate(estate: EstateStub) {
     setSelectedEstate(estate);
+    setParseResult(null);
+    setParseError('');
     setPreviewResult(null);
     setCommitResult(null);
     setCommitError('');
     setPreviewError('');
+    setShowMapper(false);
+    setRawFileFeatures([]);
     setGlobalError('');
     try {
       const detail = await getOnboardingEstateDetail(estate.id);
@@ -244,6 +256,7 @@ export default function EstateOnboarding() {
     setDetectedColumns([]);
     setColumnMapping({});
     setMappingError('');
+    setRawFileFeatures([]);
     if (!file) return;
     const lower = file.name.toLowerCase();
     if (lower.endsWith('.geojson') || lower.endsWith('.json')) {
@@ -253,6 +266,7 @@ export default function EstateOnboarding() {
           const parsed = JSON.parse(ev.target?.result as string);
           if (parsed?.type === 'FeatureCollection' && Array.isArray(parsed.features) && parsed.features.length > 0) {
             setDetectedColumns(Object.keys(parsed.features[0]?.properties ?? {}));
+            setRawFileFeatures(parsed.features);
           }
         } catch {
           // JSON error caught by backend
@@ -276,11 +290,53 @@ export default function EstateOnboarding() {
         }
         setColumnMapping(initMap);
         setMappingError('');
-        setStep('mapping');
+        setShowMapper(true);
+        setParseResult(null);
+        setPreviewResult(null);
+        setStep('map-preview');
         return;
       }
     }
-    handlePreview();
+    handleParseAndPreview(selectedFile);
+  }
+
+  async function handleParseAndPreview(file: File) {
+    if (!selectedEstate) return;
+    setParseLoading(true);
+    setParseError('');
+    setPreviewError('');
+    try {
+      const [parseRes, previewRes] = await Promise.all([
+        parseImport(selectedEstate.id, file),
+        previewImport(selectedEstate.id, file),
+      ]);
+      setParseResult(parseRes);
+      setPreviewResult(previewRes);
+      setStep('map-preview');
+
+      // For non-GeoJSON files (Shapefile/KML/KMZ), column names come from the
+      // parse response. If required props are missing, auto-open the column mapper.
+      if (parseRes.features.length > 0 && detectedColumns.length === 0) {
+        const featProps = Object.keys(parseRes.features[0].properties ?? {});
+        const hasMissingRequired = REQUIRED_PROPS.some((p) => !featProps.includes(p));
+        if (hasMissingRequired && featProps.length > 0) {
+          const norm = (s: string) => s.toLowerCase().replace(/[_\s-]/g, '');
+          const initMap: Record<string, string> = {};
+          for (const req of REQUIRED_PROPS) {
+            initMap[req] = featProps.find((c) => norm(c) === norm(req)) ?? '';
+          }
+          setRawFileFeatures(parseRes.features);
+          setDetectedColumns(featProps);
+          setColumnMapping(initMap);
+          setShowMapper(true);
+        }
+      }
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setParseError(typeof detail === 'string' ? detail : 'Preview failed.');
+    } finally {
+      setParseLoading(false);
+    }
   }
 
   async function handleApplyMapping() {
@@ -290,25 +346,33 @@ export default function EstateOnboarding() {
       setMappingError(`Kolom berikut belum dipetakan: ${unresolved.join(', ')}`);
       return;
     }
-    setPreviewLoading(true);
-    setPreviewError('');
+    setParseLoading(true);
+    setParseError('');
     setMappingError('');
+    setPreviewError('');
     try {
-      const text = await selectedFile.text();
-      const original = JSON.parse(text) as {
-        type: string;
-        features: Array<{ properties: Record<string, unknown>; [k: string]: unknown }>;
-        [k: string]: unknown;
-      };
+      let sourceFeatures: Array<{ properties: Record<string, unknown>; [k: string]: unknown }>;
+      if (rawFileFeatures.length > 0) {
+        // Always prefer the original unmodified features so re-mapping works correctly
+        // even after a previous apply (selectedFile may already be a transformed copy)
+        sourceFeatures = rawFileFeatures;
+      } else {
+        setParseError('Tidak ada fitur yang tersedia. Unggah ulang file.');
+        setParseLoading(false);
+        return;
+      }
+
       const mappedSources = new Set(Object.values(columnMapping));
       const transformed = {
-        ...original,
-        features: original.features.map((feat) => {
+        type: 'FeatureCollection',
+        features: sourceFeatures.map((feat, i) => {
           const newProps: Record<string, unknown> = {};
           for (const [req, src] of Object.entries(columnMapping)) newProps[req] = feat.properties[src];
           for (const [k, v] of Object.entries(feat.properties)) {
             if (!mappedSources.has(k)) newProps[k] = v;
           }
+          // block_code is system-generated — not required from user mapping
+          newProps.block_code = `BLK-${String(i + 1).padStart(4, '0')}`;
           return { ...feat, properties: newProps };
         }),
       };
@@ -317,35 +381,20 @@ export default function EstateOnboarding() {
         selectedFile.name.replace(/\.[^.]+$/, '') + '_mapped.geojson',
         { type: 'application/geo+json' },
       );
-      const result = await previewImport(selectedEstate.id, transformedFile);
       setSelectedFile(transformedFile);
-      setPreviewResult(result);
-      setStep('preview');
+      const [parseRes, previewRes] = await Promise.all([
+        parseImport(selectedEstate.id, transformedFile),
+        previewImport(selectedEstate.id, transformedFile),
+      ]);
+      setParseResult(parseRes);
+      setPreviewResult(previewRes);
+      setShowMapper(false);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setPreviewError(typeof detail === 'string' ? detail : 'Preview gagal setelah pemetaan kolom.');
-      setStep('upload');
+      setParseError(typeof detail === 'string' ? detail : 'Preview gagal setelah pemetaan kolom.');
+      setParseResult(null);
     } finally {
-      setPreviewLoading(false);
-    }
-  }
-
-  // ── Step 3: Upload + preview ────────────────────────────────────────────
-  async function handlePreview() {
-    if (!selectedEstate || !selectedFile) return;
-    setPreviewLoading(true);
-    setPreviewError('');
-    setPreviewResult(null);
-    try {
-      const result = await previewImport(selectedEstate.id, selectedFile);
-      setPreviewResult(result);
-      setStep('preview');
-    } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })
-        ?.response?.data?.detail;
-      setPreviewError(typeof detail === 'string' ? detail : 'Preview failed.');
-    } finally {
-      setPreviewLoading(false);
+      setParseLoading(false);
     }
   }
 
@@ -376,10 +425,17 @@ export default function EstateOnboarding() {
   function resetToEstateList() {
     setStep('estate');
     setSelectedFile(null);
+    setParseResult(null);
+    setParseError('');
     setPreviewResult(null);
     setCommitResult(null);
     setCommitError('');
     setPreviewError('');
+    setShowMapper(false);
+    setDetectedColumns([]);
+    setColumnMapping({});
+    setMappingError('');
+    setRawFileFeatures([]);
     if (fileRef.current) fileRef.current.value = '';
     if (selectedCompany) loadEstates(selectedCompany.id);
   }
@@ -677,112 +733,174 @@ export default function EstateOnboarding() {
                   hover:file:bg-indigo-100"
               />
 
-              {previewError && (
+              {(parseError || previewError) && (
                 <div className="mb-3 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-md">
-                  {previewError}
+                  {parseError || previewError}
                 </div>
               )}
 
               <button
                 onClick={handlePreviewOrMap}
-                disabled={!selectedFile || previewLoading}
+                disabled={!selectedFile || parseLoading}
                 className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
               >
-                {previewLoading ? 'Validating…' : 'Validate & preview'}
+                {parseLoading ? 'Memuat…' : 'Validate & preview map'}
               </button>
             </div>
           </div>
         )}
 
-        {/* ── Step: mapping ─────────────────────────────────────────── */}
-        {step === 'mapping' && selectedFile && (
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
-            <h2 className="text-sm font-semibold text-slate-700 mb-1">Pemetaan Kolom</h2>
-            <p className="text-xs text-slate-500 mb-1">
-              Kolom yang diperlukan tidak ditemukan di file Anda. Pilih kolom yang berisi setiap data berikut.
-            </p>
-            <p className="text-xs text-slate-400 mb-5">
-              File: <span className="font-mono">{selectedFile.name}</span> ·{' '}
-              Kolom terdeteksi: {detectedColumns.join(', ') || '—'}
-            </p>
-            <div className="space-y-3 mb-5">
-              {REQUIRED_PROPS.map((req) => (
-                <div key={req} className="grid grid-cols-2 gap-3 items-center">
-                  <div className="text-xs font-mono text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
-                    {req} <span className="text-red-500">*</span>
-                  </div>
-                  <select
-                    value={columnMapping[req] ?? ''}
-                    onChange={(e) => setColumnMapping((prev) => ({ ...prev, [req]: e.target.value }))}
-                    className="text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-indigo-400"
-                  >
-                    <option value="">— pilih kolom —</option>
-                    {detectedColumns.map((col) => (
-                      <option key={col} value={col}>{col}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-            {mappingError && (
-              <p className="text-xs text-red-600 mb-3">{mappingError}</p>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={handleApplyMapping}
-                disabled={previewLoading}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {previewLoading ? 'Memproses…' : 'Terapkan & Validasi'}
-              </button>
-              <button
-                onClick={() => setStep('upload')}
-                className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-md hover:bg-slate-50"
-              >
-                Batal
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Step: preview ─────────────────────────────────────────── */}
-        {step === 'preview' && previewResult && selectedEstate && (
+        {/* ── Step: map-preview ─────────────────────────────────────── */}
+        {step === 'map-preview' && selectedEstate && (
           <div className="space-y-4">
-            {/* Result summary */}
-            <div className={`border rounded-lg p-5 ${
-              previewResult.commit_eligible
-                ? 'bg-green-50 border-green-200'
-                : 'bg-red-50 border-red-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`text-sm font-bold ${
-                  previewResult.commit_eligible ? 'text-green-800' : 'text-red-800'
-                }`}>
-                  {previewResult.commit_eligible ? 'Ready to commit' : 'Not eligible — fix errors first'}
-                </span>
-              </div>
-              {previewResult.file_error && (
-                <p className="text-sm text-red-700">{previewResult.file_error}</p>
-              )}
-              {!previewResult.file_error && (
-                <div className="text-xs text-slate-600 space-y-0.5">
-                  <div>{previewResult.valid_blocks.length} valid blocks</div>
-                  <div>{previewResult.afdeling_count} afdelings</div>
-                  {previewResult.invalid_rows.length > 0 && (
-                    <div className="text-red-700">{previewResult.invalid_rows.length} invalid rows</div>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Column mapper sidebar (collapsible) */}
+            {selectedFile && detectedColumns.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setShowMapper((v) => !v)}
+                  className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <span>
+                    Pemetaan Kolom
+                    {!showMapper && (
+                      <span className="ml-1.5 font-normal text-slate-400 text-xs">
+                        · {detectedColumns.join(', ')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xs text-slate-400">{showMapper ? '▲ Tutup' : '▼ Buka'}</span>
+                </button>
+                {showMapper && (
+                  <div className="border-t border-slate-100 px-5 py-4">
+                    <p className="text-xs text-slate-500 mb-1">
+                      Pilih kolom yang berisi setiap data berikut.
+                    </p>
 
-            {previewResult.warnings.length > 0 && (
-              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-md space-y-1">
-                {previewResult.warnings.map((w, i) => <div key={i}>{w}</div>)}
+                    {/* 10-row data preview — helps identify which column is which */}
+                    {rawFileFeatures.length > 0 && detectedColumns.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs text-slate-400 mb-1.5">
+                          Preview data ({Math.min(10, rawFileFeatures.length)} baris pertama):
+                        </p>
+                        <div className="overflow-x-auto rounded border border-slate-200">
+                          <table className="text-[11px] whitespace-nowrap">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                              <tr>
+                                {detectedColumns.map((col) => (
+                                  <th key={col} className="px-3 py-1.5 text-left font-semibold text-slate-600 border-r border-slate-200 last:border-r-0">
+                                    {col}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rawFileFeatures.slice(0, 10).map((feat, i) => (
+                                <tr key={i} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50">
+                                  {detectedColumns.map((col) => (
+                                    <td key={col} className="px-3 py-1 text-slate-700 border-r border-slate-100 last:border-r-0 max-w-[160px] truncate">
+                                      {feat.properties[col] != null ? String(feat.properties[col]) : <span className="text-slate-300">—</span>}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3 mb-4">
+                      {REQUIRED_PROPS.map((req) => (
+                        <div key={req} className="grid grid-cols-2 gap-3 items-center">
+                          <div className="text-xs font-mono text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
+                            {req} <span className="text-red-500">*</span>
+                          </div>
+                          <select
+                            value={columnMapping[req] ?? ''}
+                            onChange={(e) => setColumnMapping((prev) => ({ ...prev, [req]: e.target.value }))}
+                            className="text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-indigo-400"
+                          >
+                            <option value="">— pilih kolom —</option>
+                            {detectedColumns.map((col) => (
+                              <option key={col} value={col}>{col}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                    {mappingError && (
+                      <p className="text-xs text-red-600 mb-3">{mappingError}</p>
+                    )}
+                    <button
+                      onClick={handleApplyMapping}
+                      disabled={parseLoading}
+                      className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {parseLoading ? 'Memproses…' : 'Terapkan & Perbarui Peta'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Invalid rows */}
-            {previewResult.invalid_rows.length > 0 && (
+            {/* Parse / map error */}
+            {parseError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md">
+                {parseError}
+              </div>
+            )}
+
+            {/* Map — primary verification surface */}
+            {parseLoading ? (
+              <div className="flex items-center justify-center h-48 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-sm text-slate-500">Memuat peta…</p>
+              </div>
+            ) : parseResult ? (
+              <BlockImportMap features={parseResult.features} />
+            ) : showMapper ? (
+              <div className="flex items-center justify-center h-48 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-sm text-slate-500">Terapkan pemetaan kolom di atas untuk menampilkan peta.</p>
+              </div>
+            ) : null}
+
+            {/* Warnings from parse */}
+            {parseResult && parseResult.warnings.length > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-md space-y-1">
+                {parseResult.warnings.map((w, i) => <div key={i}>{w}</div>)}
+              </div>
+            )}
+
+            {/* Secondary: validation result (commit eligibility + detail tables) */}
+            {previewResult && (
+              <div className={`border rounded-lg p-5 ${
+                previewResult.commit_eligible
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-sm font-bold ${
+                    previewResult.commit_eligible ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {previewResult.commit_eligible ? 'Ready to commit' : 'Not eligible — fix errors first'}
+                  </span>
+                </div>
+                {previewResult.file_error && (
+                  <p className="text-sm text-red-700">{previewResult.file_error}</p>
+                )}
+                {!previewResult.file_error && (
+                  <div className="text-xs text-slate-600 space-y-0.5">
+                    <div>{previewResult.valid_blocks.length} valid blocks</div>
+                    <div>{previewResult.afdeling_count} afdelings</div>
+                    {previewResult.invalid_rows.length > 0 && (
+                      <div className="text-red-700">{previewResult.invalid_rows.length} invalid rows</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Invalid rows detail */}
+            {previewResult && previewResult.invalid_rows.length > 0 && (
               <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                 <div className="px-5 py-3 border-b border-slate-100 bg-red-50">
                   <h3 className="text-xs font-semibold text-red-700">
@@ -812,15 +930,15 @@ export default function EstateOnboarding() {
               </div>
             )}
 
-            {/* Valid blocks preview */}
-            {previewResult.valid_blocks.length > 0 && (
+            {/* Valid blocks secondary table */}
+            {previewResult && previewResult.valid_blocks.length > 0 && (
               <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                 <div className="px-5 py-3 border-b border-slate-100 bg-green-50">
                   <h3 className="text-xs font-semibold text-green-700">
                     Valid blocks ({previewResult.valid_blocks.length})
                   </h3>
                 </div>
-                <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                <div className="overflow-x-auto max-h-48 overflow-y-auto">
                   <table className="w-full text-xs">
                     <thead className="bg-slate-50 border-b border-slate-100 sticky top-0">
                       <tr>
@@ -847,7 +965,7 @@ export default function EstateOnboarding() {
 
             {/* Action buttons */}
             <div className="flex items-center gap-3">
-              {previewResult.commit_eligible && (
+              {previewResult?.commit_eligible && (
                 <button
                   onClick={handleCommit}
                   disabled={commitLoading}

@@ -355,6 +355,21 @@ export interface ImportCommitResult {
   blocks_created: number;
 }
 
+export interface ParseImportResult {
+  features: Array<{
+    type: 'Feature';
+    geometry: {
+      type: 'Polygon';
+      coordinates: number[][][];
+    } | {
+      type: 'MultiPolygon';
+      coordinates: number[][][][];
+    };
+    properties: Record<string, unknown>;
+  }>;
+  warnings: string[];
+}
+
 export const listOnboardingEstates = (companyId: number) =>
   api
     .get<{ items: EstateStub[] }>(
@@ -392,6 +407,18 @@ export const previewImport = (estateId: number, file: File) => {
   return api
     .post<ImportPreviewResult>(
       `/api/admin/estate-onboarding/estates/${estateId}/import/preview`,
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    .then((r) => r.data);
+};
+
+export const parseImport = (estateId: number, file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api
+    .post<ParseImportResult>(
+      `/api/admin/estate-onboarding/estates/${estateId}/import/parse`,
       form,
       { headers: { 'Content-Type': 'multipart/form-data' } },
     )

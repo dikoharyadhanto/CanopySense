@@ -157,16 +157,18 @@ function BlockLabels({ blocks, enabled }: { blocks: Block[]; enabled: boolean })
             transform: translate(-50%, -50%);
             pointer-events: none;
             white-space: nowrap;
-            font-size: 10px;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 800;
             color: #1B3A2D;
-            background: rgba(255,255,255,0.82);
-            backdrop-filter: blur(2px);
-            padding: 1px 4px;
-            border-radius: 3px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-            letter-spacing: 0.02em;
-            line-height: 1.4;
+            text-shadow:
+              0 0 3px rgba(255,255,255,0.9),
+              0 0 6px rgba(255,255,255,0.7),
+              1px 1px 0 rgba(255,255,255,0.8),
+              -1px -1px 0 rgba(255,255,255,0.8),
+              1px -1px 0 rgba(255,255,255,0.8),
+              -1px 1px 0 rgba(255,255,255,0.8);
+            letter-spacing: 0.04em;
+            line-height: 1;
           ">${block.name}</div>`,
         }),
       }).addTo(group);

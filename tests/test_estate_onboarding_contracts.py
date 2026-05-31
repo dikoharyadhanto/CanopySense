@@ -121,7 +121,7 @@ class TestMigration006:
 # ===========================================================================
 
 class TestDockerComposePgAdmin:
-    DC = _ROOT / "docker-compose.yml"
+    DC = _ROOT / "docker-compose.dev-tools.yml"
 
     def test_pgadmin_service_present(self):
         content = self.DC.read_text()

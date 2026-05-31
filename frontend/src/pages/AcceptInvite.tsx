@@ -16,11 +16,17 @@ export default function AcceptInvite() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post<{ message: string; company_name: string | null }>(
-        '/auth/accept-viewer-invite',
-        { token },
-      );
+      const res = await api.post<{
+        message: string;
+        company_name: string | null;
+        needs_setup: boolean;
+        setup_token?: string;
+      }>('/auth/accept-viewer-invite', { token });
       setCompanyName(res.data.company_name);
+      if (res.data.needs_setup && res.data.setup_token) {
+        navigate(`/setup?token=${encodeURIComponent(res.data.setup_token)}`);
+        return;
+      }
       setDone(true);
     } catch (err: any) {
       setError(err?.response?.data?.detail ?? 'Token tidak valid atau sudah kadaluarsa.');

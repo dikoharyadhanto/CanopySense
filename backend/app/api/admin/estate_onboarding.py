@@ -10,6 +10,7 @@ Routes:
   POST /companies/{company_id}/estates          — create estate metadata stub
   GET  /estates/{estate_id}                     — estate detail + afdelings + blocks sample
   PATCH /estates/{estate_id}                    — edit name/code (is_draft=TRUE only)
+  POST /estates/{estate_id}/import/parse        — parse GeoJSON to features for map preview, no DB writes
   POST /estates/{estate_id}/import/preview      — validate GeoJSON, no spatial writes
   POST /estates/{estate_id}/import/commit       — transactional insert of afdelings + blocks
 """
@@ -303,6 +304,73 @@ async def edit_estate(
         )
 
     return dict(updated)
+
+
+# ---------------------------------------------------------------------------
+# POST /estates/{estate_id}/import/parse
+# ---------------------------------------------------------------------------
+
+@router.post("/estates/{estate_id}/import/parse")
+async def import_parse(
+    estate_id: int,
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_admin),
+    pool: asyncpg.Pool = Depends(get_db_pool),
+):
+    async with pool.acquire() as conn:
+        estate = await conn.fetchrow(
+            "SELECT id FROM canopysense.estates WHERE id = $1",
+            estate_id,
+        )
+    if estate is None:
+        raise HTTPException(status_code=404, detail="Estate not found")
+
+    file_bytes = await file.read(settings.MAX_UPLOAD_SIZE_BYTES + 1)
+    if len(file_bytes) > settings.MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"File exceeds maximum upload size ({settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB)",
+        )
+    filename = file.filename or "upload.geojson"
+
+    conversion_warnings: list[str] = []
+    lower_ext = filename.lower()
+    if lower_ext.endswith('.zip') or lower_ext.endswith('.kml') or lower_ext.endswith('.kmz'):
+        try:
+            file_bytes, conversion_warnings = convert_to_geojson_bytes(file_bytes, filename)
+            filename = filename.rsplit('.', 1)[0] + '.geojson'
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+
+    # Use validate_geojson_bytes only for structural error detection (invalid JSON,
+    # wrong FeatureCollection type, unsupported CRS). Do NOT filter by property
+    # validity here — the frontend column mapper needs all features with their
+    # original property names so it can offer column remapping.
+    result = validate_geojson_bytes(file_bytes, filename)
+    all_warnings = conversion_warnings + result.warnings
+
+    if result.file_error:
+        return {"features": [], "warnings": [result.file_error] + all_warnings}
+
+    try:
+        data = json.loads(file_bytes)
+    except Exception:
+        return {"features": [], "warnings": all_warnings}
+
+    features = []
+    for f in (data.get("features") or []):
+        if not isinstance(f, dict) or f.get("type") != "Feature":
+            continue
+        geom = f.get("geometry")
+        if not isinstance(geom, dict) or geom.get("type") not in ("Polygon", "MultiPolygon"):
+            continue
+        features.append({
+            "type": "Feature",
+            "geometry": geom,
+            "properties": f.get("properties") or {},
+        })
+
+    return {"features": features, "warnings": all_warnings}
 
 
 # ---------------------------------------------------------------------------
